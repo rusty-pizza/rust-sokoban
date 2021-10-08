@@ -1,6 +1,4 @@
 use std::{
-    error::Error,
-    fmt::Display,
     fs::File,
     io::BufReader,
     path::{Path, PathBuf},
@@ -13,35 +11,24 @@ use sfml::{
 };
 use tiled::{TiledError, Tileset};
 
+use thiserror::Error;
+
 pub struct Tilesheet {
     texture: SfBox<Texture>,
     tileset: Tileset,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum TilesheetLoadError {
+    #[error("IO error: {0}")]
     IoError(std::io::Error),
+    #[error("Tiled error: {0}")]
     TiledError(TiledError),
+    #[error("Invalid texture count")]
     InvalidTextureCount,
+    #[error("Invalid texture path: {0:?}")]
     InvalidTexturePath(PathBuf),
 }
-
-impl Display for TilesheetLoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TilesheetLoadError::IoError(err) => f.write_fmt(format_args!("IO error: {}", err)),
-            TilesheetLoadError::TiledError(err) => {
-                f.write_fmt(format_args!("Tiled error: {}", err))
-            }
-            TilesheetLoadError::InvalidTextureCount => f.write_str("Invalid texture count"),
-            TilesheetLoadError::InvalidTexturePath(path) => {
-                f.write_fmt(format_args!("Invalid texture path: {:?}", path))
-            }
-        }
-    }
-}
-
-impl Error for TilesheetLoadError {}
 
 impl From<std::io::Error> for TilesheetLoadError {
     fn from(x: std::io::Error) -> Self {

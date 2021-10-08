@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, fmt::Display, path::Path};
+use std::{collections::HashMap, path::Path};
 
 use sfml::{
     graphics::{Drawable, VertexArray},
@@ -10,6 +10,8 @@ use crate::{
     quadarray::QuadArray,
     tilesheet::{Tilesheet, TilesheetLoadError},
 };
+
+use thiserror::Error;
 
 #[derive(Debug, Clone, Copy)]
 pub enum CrateStyle {
@@ -50,36 +52,27 @@ pub struct Map {
     vao: VertexArray,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum MapLoadError {
+    #[error("No player spawn")]
     NoPlayerSpawn,
+    #[error("No goals or crates")]
     NoGoalsOrCrates,
+    #[error("Map not finite")]
     NotFinite,
+    #[error("Invalid layers")]
     InvalidLayers,
+    #[error("Invalid tilesheet count")]
     InvalidTilesheetCount,
+    #[error("Tilesheet load error: {0}")]
     TilesheetLoadError(TilesheetLoadError),
+    #[error("Invalid object groups")]
     InvalidObjectGroups,
+    #[error("Invalid object: {0:?}")]
     InvalidObject(Object),
+    #[error("Tiled error: {0}")]
     TiledError(TiledError),
 }
-
-impl Display for MapLoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            MapLoadError::NoPlayerSpawn => f.write_str("No player spawn"),
-            MapLoadError::NoGoalsOrCrates => f.write_str("No goals or crates"),
-            MapLoadError::NotFinite => f.write_str("Not finite"),
-            MapLoadError::InvalidLayers => f.write_str("Invalid layers"),
-            MapLoadError::InvalidTilesheetCount => f.write_str("Invalid tilesheet count"),
-            MapLoadError::TilesheetLoadError(err) => f.write_fmt(format_args!("Tilesheet load error: {}", err)),
-            MapLoadError::InvalidObjectGroups => f.write_str("Invalid object groups"),
-            MapLoadError::InvalidObject(obj) => f.write_fmt(format_args!("Invalid object: {:?}", obj)),
-            MapLoadError::TiledError(err) => f.write_fmt(format_args!("Tiled error: {}", err)),
-        }
-    }
-}
-
-impl Error for MapLoadError { }
 
 impl From<TiledError> for MapLoadError {
     fn from(x: TiledError) -> Self {
