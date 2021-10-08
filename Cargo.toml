@@ -7,3 +7,5 @@ edition = "2018"
 
 [dependencies]
 sfml = { version = "0.16", features = ["graphics"] }
+tiled = "0.9"
+anyhow = "1.0"

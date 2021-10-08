@@ -1,3 +1,6 @@
 fn main() {
-    sokoban::run();
+    match sokoban::run() {
+        Ok(()) => (),
+        Err(err) => println!("{}", err),
+    }
 }
