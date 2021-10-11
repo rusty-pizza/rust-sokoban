@@ -13,11 +13,11 @@ mod quadarray;
 mod tilesheet;
 
 pub fn run() -> anyhow::Result<()> {
-    let t_map = tiled::parse_file(Path::new("assets/levels/untitled.tmx"))?;
+    let map = tiled::parse_file(Path::new("assets/levels/untitled.tmx"))?;
     let tilesheet = Tilesheet::from_file(Path::new("assets/tilesheets/sokoban_tilesheet.tsx"))?;
-    let map = {
+    let level = {
         Level::new(
-            &t_map,
+            &map,
             &tilesheet,
             HashMap::from_iter(IntoIter::new([
                 (7u32, (level::ObjectType::Crate, level::CrateStyle::Wooden)),
@@ -39,11 +39,15 @@ pub fn run() -> anyhow::Result<()> {
             }
         }
 
-        let camera_transform = camera_transform(window.size(), map.size());
+        let camera_transform = camera_transform(window.size(), level.size());
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
-        window.clear(Color::BLACK);
-        window.draw_with_renderstates(&map, &render_states);
+        let bg_color = map
+            .background_colour
+            .and_then(|c| Some(Color::rgb(c.red, c.green, c.blue)))
+            .unwrap_or(Color::BLACK);
+        window.clear(bg_color);
+        window.draw_with_renderstates(&level, &render_states);
         window.display();
     }
 }
