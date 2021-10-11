@@ -5,7 +5,7 @@ use std::{
 };
 
 use sfml::{
-    graphics::{FloatRect, Texture},
+    graphics::{FloatRect, IntRect, Sprite, Texture},
     system::Vector2u,
     SfBox,
 };
@@ -43,10 +43,10 @@ impl From<TiledError> for TilesheetLoadError {
 }
 
 impl Tilesheet {
-    pub fn from_tileset(
+    pub fn from_tileset<'p>(
         tileset: Tileset,
-        origin_path: &Path,
-    ) -> Result<Tilesheet, TilesheetLoadError> {
+        origin_path: &'p Path,
+    ) -> Result<Self, TilesheetLoadError> {
         if tileset.images.len() != 1 {
             return Err(TilesheetLoadError::InvalidTextureCount);
         }
@@ -59,24 +59,27 @@ impl Tilesheet {
             }
         };
 
-        Ok(Tilesheet { texture, tileset })
+        Ok(Tilesheet {
+            texture: texture,
+            tileset,
+        })
     }
 
-    pub fn from_file(path: &Path) -> Result<Tilesheet, TilesheetLoadError> {
+    pub fn from_file<'p>(path: &'p Path) -> Result<Self, TilesheetLoadError> {
         let tileset = {
             let file = File::open(path)?;
             let reader = BufReader::new(file);
             tiled::parse_tileset(reader, 1)?
         };
 
-        Self::from_tileset(tileset, path)
+        Self::from_tileset(tileset, path.parent().unwrap())
     }
 
     pub fn texture(&self) -> &Texture {
         &self.texture
     }
 
-    pub fn tile_uv(&self, gid: u32) -> Option<FloatRect> {
+    pub fn tile_rect(&self, gid: u32) -> Option<IntRect> {
         if gid == 0 {
             return None;
         }
@@ -85,18 +88,47 @@ impl Tilesheet {
         let tile_width = self.tileset.tile_width;
         let tile_height = self.tileset.tile_height;
         let tiles_per_row = self.texture.size().x / tile_width;
-        let x = (id % tiles_per_row * tile_width) as f32;
-        let y = (id / tiles_per_row * tile_height) as f32;
+        let x = id % tiles_per_row * tile_width;
+        let y = id / tiles_per_row * tile_height;
 
-        Some(FloatRect {
-            left: x,
-            top: y,
-            width: tile_width as f32,
-            height: tile_height as f32,
+        Some(IntRect {
+            left: x as i32,
+            top: y as i32,
+            width: tile_width as i32,
+            height: tile_height as i32,
         })
+    }
+
+    pub fn tile_uv(&self, gid: u32) -> Option<FloatRect> {
+        if let Some(IntRect {
+            left,
+            top,
+            width,
+            height,
+        }) = self.tile_rect(gid)
+        {
+            // In SFML, UVs are in pixel coordinates, so we just grab the tile rect and convert it
+            // into a FloatRect
+            Some(FloatRect {
+                left: left as f32,
+                top: top as f32,
+                width: width as f32,
+                height: height as f32,
+            })
+        } else {
+            None
+        }
     }
 
     pub fn tile_size(&self) -> Vector2u {
         Vector2u::new(self.tileset.tile_width, self.tileset.tile_height)
+    }
+
+    pub fn tile_sprite(&self, gid: u32) -> Option<Sprite> {
+        if let Some(rect) = self.tile_rect(gid) {
+            Some(Sprite::with_texture_and_rect(&self.texture, &rect))
+        } else {
+            None
+        }
     }
 }

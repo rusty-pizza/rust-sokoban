@@ -1,22 +1,30 @@
 use std::{array::IntoIter, collections::HashMap, iter::FromIterator, path::Path};
 
+use level::Level;
 use sfml::{
     graphics::{BlendMode, Color, RenderStates, RenderTarget, RenderWindow, Transform},
     system::{Vector2f, Vector2u},
     window::{ContextSettings, Event, Style},
 };
+use tilesheet::Tilesheet;
 
-mod map;
+mod level;
 mod quadarray;
 mod tilesheet;
 
 pub fn run() -> anyhow::Result<()> {
+    let t_map = tiled::parse_file(Path::new("assets/levels/untitled.tmx"))?;
+    let tilesheet = Tilesheet::from_file(Path::new("assets/tilesheets/sokoban_tilesheet.tsx"))?;
     let map = {
-        map::Map::from_file(
-            Path::new("assets/levels/untitled.tmx"),
+        Level::new(
+            &t_map,
+            &tilesheet,
             HashMap::from_iter(IntoIter::new([
-                (7u32, (map::ObjectType::Crate, map::CrateStyle::Wooden)),
-                (26u32, (map::ObjectType::CrateGoal, map::CrateStyle::Wooden)),
+                (7u32, (level::ObjectType::Crate, level::CrateStyle::Wooden)),
+                (
+                    40u32,
+                    (level::ObjectType::CrateGoal, level::CrateStyle::Wooden),
+                ),
             ])),
         )?
     };

@@ -1,7 +1,7 @@
-use std::{collections::HashMap, path::Path};
+use std::collections::HashMap;
 
 use sfml::{
-    graphics::{Drawable, VertexArray},
+    graphics::{Drawable, Sprite, Transformable, VertexArray},
     system::{Vector2f, Vector2i, Vector2u},
 };
 use tiled::{LayerData, LayerTile, Object, TiledError};
@@ -22,6 +22,7 @@ pub enum CrateStyle {
     Metal,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum ObjectType {
     CrateGoal,
     Crate,
@@ -29,26 +30,94 @@ pub enum ObjectType {
 
 type StyleGidMap = HashMap<u32, (ObjectType, CrateStyle)>;
 
-pub struct Crate {
+// For now, Crate and Goal are practically the same, but this will change once more complexity is
+// added
+pub struct Crate<'s> {
     position: Vector2i,
     style: CrateStyle,
+    sprite: Sprite<'s>,
 }
 
-pub struct Goal {
+impl<'s> Crate<'s> {
+    fn new(
+        position: Vector2i,
+        style: CrateStyle,
+        tilesheet: &'s Tilesheet,
+        gid: u32,
+    ) -> Option<Self> {
+        tilesheet.tile_sprite(gid).map(|mut sprite| {
+            sprite.set_position(Vector2f::new(position.x as f32, position.y as f32));
+            sprite.set_scale({
+                let rect = sprite.texture_rect();
+                Vector2f::new(1f32 / rect.width as f32, 1f32 / rect.height as f32)
+            });
+            Self {
+                position,
+                style,
+                sprite,
+            }
+        })
+    }
+}
+
+impl<'s> Drawable for Crate<'s> {
+    fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(
+        &'a self,
+        target: &mut dyn sfml::graphics::RenderTarget,
+        states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
+    ) {
+        self.sprite.draw(target, states);
+    }
+}
+
+pub struct Goal<'s> {
     position: Vector2i,
     style: CrateStyle,
+    sprite: Sprite<'s>,
+}
+
+impl<'s> Goal<'s> {
+    fn new(
+        position: Vector2i,
+        style: CrateStyle,
+        tilesheet: &'s Tilesheet,
+        gid: u32,
+    ) -> Option<Self> {
+        tilesheet.tile_sprite(gid).map(|mut sprite| {
+            sprite.set_position(Vector2f::new(position.x as f32, position.y as f32));
+            sprite.set_scale({
+                let rect = sprite.texture_rect();
+                Vector2f::new(1f32 / rect.width as f32, 1f32 / rect.height as f32)
+            });
+            Self {
+                position,
+                style,
+                sprite,
+            }
+        })
+    }
+}
+
+impl<'s> Drawable for Goal<'s> {
+    fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(
+        &'a self,
+        target: &mut dyn sfml::graphics::RenderTarget,
+        states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
+    ) {
+        self.sprite.draw(target, states);
+    }
 }
 
 type LayerTiles = Vec<LayerTile>;
 
-pub struct Map {
+pub struct Level<'s> {
     player_spawn: Vector2i,
-    crates: Vec<Crate>,
-    goals: Vec<Goal>,
+    crates: Vec<Crate<'s>>,
+    goals: Vec<Goal<'s>>,
     size: Vector2u,
     building_layer: LayerTiles,
     floor_layer: LayerTiles,
-    tilesheet: Tilesheet,
+    tilesheet: &'s Tilesheet,
     vao: VertexArray,
 }
 
@@ -86,10 +155,12 @@ impl From<TilesheetLoadError> for MapLoadError {
     }
 }
 
-impl Map {
-    pub fn from_file(path: &Path, style_map: StyleGidMap) -> Result<Map, MapLoadError> {
-        let data = tiled::parse_file(path)?;
-
+impl<'s> Level<'s> {
+    pub fn new(
+        data: &tiled::Map,
+        tilesheet: &'s Tilesheet,
+        style_map: StyleGidMap,
+    ) -> Result<Level<'s>, MapLoadError> {
         if data.infinite {
             return Err(MapLoadError::NotFinite);
         }
@@ -101,11 +172,6 @@ impl Map {
         if data.tilesets.len() != 1 {
             return Err(MapLoadError::InvalidTilesheetCount);
         }
-
-        let tilesheet = {
-            let tileset = data.tilesets.first().unwrap().clone();
-            Tilesheet::from_tileset(tileset, path.parent().expect("obtaining parent of path"))?
-        };
 
         let size = Vector2u::new(data.width, data.height);
 
@@ -138,19 +204,22 @@ impl Map {
         let mut goals = Vec::new();
         let mut player_spawn = None;
         for object in object_group.objects.iter() {
-            let position = Vector2i::new(object.x as i32, object.y as i32);
+            let position = Vector2i::new(
+                (object.x / data.tile_width as f32) as i32,
+                (object.y / data.tile_height as f32) as i32 - 1,
+            );
             if object.name == "player" {
                 player_spawn = Some(position);
             } else if let Some((obj_type, crate_style)) = style_map.get(&object.gid) {
                 match obj_type {
-                    &ObjectType::Crate => crates.push(Crate {
-                        position,
-                        style: crate_style.clone(),
-                    }),
-                    &ObjectType::CrateGoal => goals.push(Goal {
-                        position,
-                        style: crate_style.clone(),
-                    }),
+                    &ObjectType::Crate => crates.push(
+                        Crate::new(position, *crate_style, &tilesheet, object.gid)
+                            .expect("crate creation"),
+                    ),
+                    &ObjectType::CrateGoal => goals.push(
+                        Goal::new(position, *crate_style, &tilesheet, object.gid)
+                            .expect("goal creation"),
+                    ),
                 }
             } else {
                 return Err(MapLoadError::InvalidObject(object.clone()));
@@ -220,20 +289,23 @@ impl Map {
     pub fn size(&self) -> Vector2u {
         self.size
     }
-
-    pub fn tilesheet(&self) -> &Tilesheet {
-        &self.tilesheet
-    }
 }
 
-impl Drawable for Map {
+impl<'s> Drawable for Level<'s> {
     fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(
         &'a self,
         target: &mut dyn sfml::graphics::RenderTarget,
         states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
-        let mut state = states.clone();
-        state.set_texture(Some(&self.tilesheet.texture()));
-        target.draw_vertex_array(&self.vao, &state);
+        let mut vao_rstate = states.clone();
+        vao_rstate.set_texture(Some(&self.tilesheet.texture()));
+        target.draw_vertex_array(&self.vao, &vao_rstate);
+
+        for c in self.crates.iter() {
+            target.draw_with_renderstates(c, &states);
+        }
+        for g in self.goals.iter() {
+            target.draw_with_renderstates(g, &states);
+        }
     }
 }
