@@ -1,33 +1,23 @@
-use std::{array::IntoIter, collections::HashMap, iter::FromIterator, path::Path};
+use std::path::Path;
 
+use asset_manager::AssetManager;
 use level::Level;
 use sfml::{
     graphics::{BlendMode, Color, RenderStates, RenderTarget, RenderWindow, Transform},
     system::{Vector2f, Vector2u},
     window::{ContextSettings, Event, Style},
 };
-use tilesheet::Tilesheet;
+use tiled::map::Map;
 
+mod asset_manager;
 mod level;
 mod quadarray;
+mod sprite_atlas;
 mod tilesheet;
 
 pub fn run() -> anyhow::Result<()> {
-    let map = tiled::parse_file(Path::new("assets/levels/untitled.tmx"))?;
-    let tilesheet = Tilesheet::from_file(Path::new("assets/tilesheets/sokoban_tilesheet.tsx"))?;
-    let level = {
-        Level::new(
-            &map,
-            &tilesheet,
-            HashMap::from_iter(IntoIter::new([
-                (7u32, (level::ObjectType::Crate, level::CrateStyle::Wooden)),
-                (
-                    40u32,
-                    (level::ObjectType::CrateGoal, level::CrateStyle::Wooden),
-                ),
-            ])),
-        )?
-    };
+    let mut assets = AssetManager::new();
+    let level = { Level::from_file(Path::new("assets/levels/untitled.tmx"), &mut assets)? };
 
     let mut window = create_window();
 
@@ -43,7 +33,7 @@ pub fn run() -> anyhow::Result<()> {
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
         let bg_color = map
-            .background_colour
+            .background_color
             .and_then(|c| Some(Color::rgb(c.red, c.green, c.blue)))
             .unwrap_or(Color::BLACK);
         window.clear(bg_color);

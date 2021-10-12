@@ -9,7 +9,7 @@ use sfml::{
     system::Vector2u,
     SfBox,
 };
-use tiled::{TiledError, Tileset};
+use tiled::{error::TiledError, tile::Gid, tileset::Tileset};
 
 use thiserror::Error;
 
@@ -21,37 +21,43 @@ pub struct Tilesheet {
 #[derive(Debug, Error)]
 pub enum TilesheetLoadError {
     #[error("IO error: {0}")]
-    IoError(std::io::Error),
+    IoError(
+        #[from]
+        #[source]
+        std::io::Error,
+    ),
     #[error("Tiled error: {0}")]
-    TiledError(TiledError),
+    TiledError(
+        #[from]
+        #[source]
+        TiledError,
+    ),
     #[error("Invalid texture count")]
     InvalidTextureCount,
     #[error("Invalid texture path: {0:?}")]
     InvalidTexturePath(PathBuf),
-}
-
-impl From<std::io::Error> for TilesheetLoadError {
-    fn from(x: std::io::Error) -> Self {
-        Self::IoError(x)
-    }
-}
-
-impl From<TiledError> for TilesheetLoadError {
-    fn from(x: TiledError) -> Self {
-        Self::TiledError(x)
-    }
+    #[error("The tileset provided has an invalid source path: {0:?}")]
+    TilesetHasInvalidSource(Option<PathBuf>),
 }
 
 impl Tilesheet {
-    pub fn from_tileset<'p>(
-        tileset: Tileset,
-        origin_path: &'p Path,
-    ) -> Result<Self, TilesheetLoadError> {
+    pub fn from_tileset<'p>(tileset: Tileset) -> Result<Self, TilesheetLoadError> {
         if tileset.images.len() != 1 {
             return Err(TilesheetLoadError::InvalidTextureCount);
         }
 
         let texture = {
+            let origin_path = match &tileset.source {
+                Some(path) => match path.parent() {
+                    Some(parent) => parent.to_owned(),
+                    None => {
+                        return Err(TilesheetLoadError::TilesetHasInvalidSource(Some(
+                            path.clone(),
+                        )))
+                    }
+                },
+                None => return Err(TilesheetLoadError::TilesetHasInvalidSource(None)),
+            };
             let texture_path = origin_path.join(Path::new(&tileset.images.first().unwrap().source));
             match Texture::from_file(texture_path.to_str().expect("obtaining valid UTF-8 path")) {
                 Some(tex) => tex,
@@ -60,30 +66,34 @@ impl Tilesheet {
         };
 
         Ok(Tilesheet {
-            texture: texture,
+            texture,
             tileset,
         })
     }
 
-    pub fn from_file<'p>(path: &'p Path) -> Result<Self, TilesheetLoadError> {
+    pub fn from_file<'p>(path: &'p Path, first_gid: Gid) -> Result<Self, TilesheetLoadError> {
         let tileset = {
             let file = File::open(path)?;
             let reader = BufReader::new(file);
-            tiled::parse_tileset(reader, 1)?
+            Tileset::parse_reader(reader, first_gid, Some(path))?
         };
 
-        Self::from_tileset(tileset, path.parent().unwrap())
+        Self::from_tileset(tileset)
     }
 
     pub fn texture(&self) -> &Texture {
         &self.texture
     }
 
-    pub fn tile_rect(&self, gid: u32) -> Option<IntRect> {
-        if gid == 0 {
+    pub fn tileset(&self) -> &Tileset {
+        &self.tileset
+    }
+
+    pub fn tile_rect(&self, gid: Gid) -> Option<IntRect> {
+        if gid == Gid::EMPTY {
             return None;
         }
-        let id = gid - 1;
+        let id = gid.0 - self.tileset.first_gid.0;
 
         let tile_width = self.tileset.tile_width;
         let tile_height = self.tileset.tile_height;
@@ -99,7 +109,7 @@ impl Tilesheet {
         })
     }
 
-    pub fn tile_uv(&self, gid: u32) -> Option<FloatRect> {
+    pub fn tile_uv(&self, gid: Gid) -> Option<FloatRect> {
         if let Some(IntRect {
             left,
             top,
@@ -124,7 +134,7 @@ impl Tilesheet {
         Vector2u::new(self.tileset.tile_width, self.tileset.tile_height)
     }
 
-    pub fn tile_sprite(&self, gid: u32) -> Option<Sprite> {
+    pub fn tile_sprite(&self, gid: Gid) -> Option<Sprite> {
         if let Some(rect) = self.tile_rect(gid) {
             Some(Sprite::with_texture_and_rect(&self.texture, &rect))
         } else {

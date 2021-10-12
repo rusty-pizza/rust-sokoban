@@ -1,41 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="10" height="10" tilewidth="128" tileheight="128" infinite="0" backgroundcolor="#3c3c3c" nextlayerid="6" nextobjectid="14">
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="9" height="10" tilewidth="128" tileheight="128" infinite="0" backgroundcolor="#3c3c3c" nextlayerid="6" nextobjectid="22">
  <tileset firstgid="1" source="../tilesheets/sokoban_tilesheet.tsx"/>
- <layer id="4" name="floor" width="10" height="10" offsetx="64" offsety="64">
+ <layer id="4" name="floor" width="9" height="10" offsetx="64" offsety="64">
   <data encoding="csv">
-0,90,90,90,90,90,90,0,0,0,
-0,90,90,90,90,90,90,0,0,0,
-0,90,90,90,90,90,90,0,0,0,
-0,90,90,90,90,90,90,0,0,0,
-0,90,90,90,90,90,90,90,0,0,
-90,90,90,90,90,90,90,90,90,0,
-90,90,90,90,90,90,90,90,90,0,
-90,90,90,90,90,90,90,90,90,0,
-90,90,90,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0
+0,90,90,90,90,90,90,0,0,
+0,90,90,90,90,90,90,0,0,
+0,90,90,90,90,90,90,0,0,
+0,90,90,90,90,90,90,0,0,
+0,90,90,90,90,90,90,90,0,
+90,90,90,90,90,90,90,90,0,
+90,90,90,90,90,90,90,90,0,
+90,90,90,90,90,0,0,0,0,
+90,90,90,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="1" name="building" width="10" height="10">
+ <layer id="1" name="building" width="9" height="10">
   <data encoding="csv">
-0,85,85,85,85,85,85,85,0,0,
-0,85,0,0,0,12,0,85,0,0,
-0,85,0,0,0,12,0,85,0,0,
-0,85,85,0,0,12,0,85,0,0,
-0,85,0,12,85,85,0,85,85,0,
-85,85,0,12,0,85,0,0,85,85,
-85,0,0,0,0,12,0,0,0,85,
-85,0,0,0,0,85,0,0,0,85,
-85,0,0,85,85,85,85,85,85,85,
-85,85,85,85,0,0,0,0,0,0
+0,85,85,85,85,85,85,85,0,
+0,85,0,0,0,12,0,85,0,
+0,85,0,0,0,12,0,85,0,
+0,85,0,0,0,85,0,85,0,
+0,85,85,12,85,85,0,85,85,
+85,85,0,12,0,85,0,0,85,
+85,0,0,0,0,12,0,0,85,
+85,0,0,0,0,85,85,85,85,
+85,0,0,85,85,85,0,0,0,
+85,85,85,85,0,0,0,0,0
 </data>
  </layer>
  <objectgroup id="2" name="objects">
-  <object id="3" name="player" gid="73" x="256" y="256" width="128" height="128"/>
-  <object id="4" gid="7" x="384" y="384" width="128" height="128"/>
-  <object id="5" gid="7" x="384" y="512" width="128" height="128"/>
-  <object id="6" gid="7" x="768" y="384" width="128" height="128"/>
-  <object id="7" gid="7" x="384" y="896" width="128" height="128"/>
-  <object id="8" gid="7" x="384" y="1024" width="128" height="128"/>
-  <object id="12" gid="40" x="384" y="256" width="128" height="128"/>
+  <object id="3" name="player" gid="73" x="256" y="128" width="128" height="128"/>
+  <object id="4" gid="7" x="384" y="256" width="128" height="128"/>
+  <object id="5" gid="7" x="384" y="384" width="128" height="128"/>
+  <object id="6" gid="7" x="768" y="256" width="128" height="128"/>
+  <object id="7" gid="7" x="384" y="768" width="128" height="128"/>
+  <object id="8" gid="7" x="384" y="896" width="128" height="128"/>
+  <object id="12" gid="40" x="384" y="128" width="128" height="128"/>
  </objectgroup>
 </map>

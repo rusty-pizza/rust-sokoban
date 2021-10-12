@@ -7,6 +7,6 @@ edition = "2018"
 
 [dependencies]
 sfml = { version = "0.16", features = ["graphics"] }
-tiled = "0.9"
+tiled = { git = "https://github.com/rusty-pizza/rs-tiled" }
 anyhow = "1.0"
 thiserror = "1.0"
