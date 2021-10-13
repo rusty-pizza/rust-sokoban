@@ -3,11 +3,10 @@ use std::path::Path;
 use asset_manager::AssetManager;
 use level::Level;
 use sfml::{
-    graphics::{BlendMode, Color, RenderStates, RenderTarget, RenderWindow, Transform},
+    graphics::{BlendMode, RenderStates, RenderTarget, RenderWindow, Transform},
     system::{Vector2f, Vector2u},
     window::{ContextSettings, Event, Style},
 };
-use tiled::map::Map;
 
 mod asset_manager;
 mod level;
@@ -32,11 +31,7 @@ pub fn run() -> anyhow::Result<()> {
         let camera_transform = camera_transform(window.size(), level.size());
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
-        let bg_color = map
-            .background_color
-            .and_then(|c| Some(Color::rgb(c.red, c.green, c.blue)))
-            .unwrap_or(Color::BLACK);
-        window.clear(bg_color);
+        window.clear(level.background_color);
         window.draw_with_renderstates(&level, &render_states);
         window.display();
     }

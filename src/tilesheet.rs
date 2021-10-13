@@ -65,10 +65,7 @@ impl Tilesheet {
             }
         };
 
-        Ok(Tilesheet {
-            texture,
-            tileset,
-        })
+        Ok(Tilesheet { texture, tileset })
     }
 
     pub fn from_file<'p>(path: &'p Path, first_gid: Gid) -> Result<Self, TilesheetLoadError> {
