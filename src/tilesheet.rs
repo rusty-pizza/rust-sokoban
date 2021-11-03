@@ -60,7 +60,7 @@ impl Tilesheet {
             };
             let texture_path = origin_path.join(Path::new(&tileset.images.first().unwrap().source));
             match Texture::from_file(texture_path.to_str().expect("obtaining valid UTF-8 path")) {
-                Some(tex) => tex,
+                Ok(tex) => tex,
                 _ => return Err(TilesheetLoadError::InvalidTexturePath(texture_path)),
             }
         };

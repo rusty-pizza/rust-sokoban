@@ -2,10 +2,7 @@ mod objects;
 
 use std::path::Path;
 
-use sfml::{
-    graphics::{Color, Drawable, VertexArray},
-    system::{Vector2f, Vector2i, Vector2u},
-};
+use sfml::{graphics::{Color, Drawable, PrimitiveType, Vertex}, system::{Vector2f, Vector2i, Vector2u}};
 use tiled::{
     error::TiledError,
     layers::{LayerData, LayerTile},
@@ -16,7 +13,7 @@ use tiled::{
 
 use crate::{
     asset_manager::AssetManager,
-    quadarray::QuadArray,
+    quadarray::QuadMeshBuilder,
     tilesheet::{Tilesheet, TilesheetLoadError},
 };
 
@@ -37,7 +34,7 @@ pub struct Level<'s> {
     size: Vector2u,
     flooring: Vec<Floor>,
     tilesheet: &'s Tilesheet,
-    vao: VertexArray,
+    vertices: Vec<Vertex>,
     pub background_color: Color,
 }
 
@@ -160,7 +157,7 @@ impl<'s> Level<'s> {
             player_spawn,
             crates,
             goals,
-            vao: Self::generate_vao(&size, &building_layer, &floor_layer, &tilesheet),
+            vertices: Self::generate_vertices(&size, &building_layer, &floor_layer, &tilesheet),
             flooring,
             size,
             tilesheet,
@@ -208,15 +205,15 @@ impl<'s> Level<'s> {
             .collect::<Vec<_>>()
     }
 
-    fn generate_vao(
+    fn generate_vertices(
         size_in_tiles: &Vector2u,
         building_layer: &Vec<LayerTile>,
         floor_layer: &Vec<LayerTile>,
         tilesheet: &Tilesheet,
-    ) -> VertexArray {
+    ) -> Vec<Vertex> {
         const FLOOR_OFFSET: Vector2f = Vector2f::new(0.5f32, 0.5f32);
 
-        let mut quads = QuadArray::new((size_in_tiles.x * size_in_tiles.y) as usize);
+        let mut quads = QuadMeshBuilder::new();
 
         let iter = building_layer.iter().zip(floor_layer.iter()).enumerate();
         for (i, (b_tile, f_tile)) in iter {
@@ -260,7 +257,7 @@ impl<'s> Drawable for Level<'s> {
     ) {
         let mut vao_rstate = states.clone();
         vao_rstate.set_texture(Some(&self.tilesheet.texture()));
-        target.draw_vertex_array(&self.vao, &vao_rstate);
+        target.draw_primitives(&self.vertices, PrimitiveType::QUADS, &vao_rstate);
 
         for c in self.crates.iter() {
             target.draw_with_renderstates(c, &states);

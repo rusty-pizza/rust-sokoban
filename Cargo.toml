@@ -1,12 +1,16 @@
 [package]
 name = "sokoban"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sfml = { version = "0.16", features = ["graphics"] }
 tiled = { git = "https://github.com/rusty-pizza/rs-tiled" }
 anyhow = "1.0"
 thiserror = "1.0"
+
+[dependencies.sfml]
+git = "https://github.com/jeremyletang/rust-sfml"
+features = ["graphics"]
+rev = "e43ff7b6cd0ffd8a81d0b99e2bcc91c2046023df"

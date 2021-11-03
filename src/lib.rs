@@ -42,7 +42,7 @@ fn create_window() -> RenderWindow {
 
     // Create the window of the application
     let mut context_settings = ContextSettings::default();
-    context_settings.set_antialiasing_level(AA_LEVEL);
+    context_settings.antialiasing_level = AA_LEVEL;
     let mut window = RenderWindow::new((1080, 720), "Sokoban!", Style::CLOSE, &context_settings);
     window.set_vertical_sync_enabled(true);
 
