@@ -33,7 +33,7 @@ pub enum TilesheetLoadError {
         #[source]
         TiledError,
     ),
-    #[error("Invalid texture count")]
+    #[error("Invalid texture count: Tileset must have a minimum of one image, and multiple images are currently not supported")]
     InvalidTextureCount,
     #[error("Invalid texture path: {0:?}")]
     InvalidTexturePath(PathBuf),
@@ -42,33 +42,33 @@ pub enum TilesheetLoadError {
 }
 
 impl Tilesheet {
+    /// Create a tilesheet from a Tiled tileset, loading its texture along the way.
     pub fn from_tileset<'p>(tileset: Tileset) -> Result<Self, TilesheetLoadError> {
-        if tileset.images.len() != 1 {
-            return Err(TilesheetLoadError::InvalidTextureCount);
-        }
+        let tileset_image = tileset
+            .images
+            .first()
+            .ok_or(TilesheetLoadError::InvalidTextureCount)?;
 
         let texture = {
             let origin_path = match &tileset.source {
-                Some(path) => match path.parent() {
-                    Some(parent) => parent.to_owned(),
-                    None => {
-                        return Err(TilesheetLoadError::TilesetHasInvalidSource(Some(
-                            path.clone(),
-                        )))
-                    }
-                },
+                Some(path) => path
+                    .parent()
+                    .ok_or(TilesheetLoadError::TilesetHasInvalidSource(Some(
+                        path.clone(),
+                    )))?,
                 None => return Err(TilesheetLoadError::TilesetHasInvalidSource(None)),
             };
-            let texture_path = origin_path.join(Path::new(&tileset.images.first().unwrap().source));
-            match Texture::from_file(texture_path.to_str().expect("obtaining valid UTF-8 path")) {
-                Ok(tex) => tex,
-                _ => return Err(TilesheetLoadError::InvalidTexturePath(texture_path)),
-            }
+
+            let texture_path = origin_path.join(Path::new(&tileset_image.source));
+
+            Texture::from_file(texture_path.to_str().expect("obtaining valid UTF-8 path"))
+                .or(Err(TilesheetLoadError::InvalidTexturePath(texture_path)))?
         };
 
         Ok(Tilesheet { texture, tileset })
     }
 
+    /// Load a tilesheet from a path to a Tiled tileset, loading its texture along the way.
     pub fn from_file<'p>(path: &'p Path, first_gid: Gid) -> Result<Self, TilesheetLoadError> {
         let tileset = {
             let file = File::open(path)?;
@@ -133,10 +133,7 @@ impl Tilesheet {
     }
 
     pub fn tile_sprite(&self, gid: Gid) -> Option<Sprite> {
-        if let Some(rect) = self.tile_rect(gid) {
-            Some(Sprite::with_texture_and_rect(&self.texture, &rect))
-        } else {
-            None
-        }
+        self.tile_rect(gid)
+            .and_then(|rect| Some(Sprite::with_texture_and_rect(&self.texture, &rect)))
     }
 }

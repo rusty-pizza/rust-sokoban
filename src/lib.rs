@@ -13,13 +13,16 @@ pub mod graphics;
 mod level;
 mod tilesheet;
 
-pub fn run() -> anyhow::Result<()> {
-    let mut assets = AssetManager::new();
-    let level = { Level::from_file(Path::new("assets/levels/untitled.tmx"), &mut assets)? };
+const LEVEL_PATH: &'static str = "assets/levels/untitled.tmx";
 
+pub fn run() -> anyhow::Result<()> {
+    // Initialize
+    let mut assets = AssetManager::new();
+    let level = Level::from_file(Path::new(LEVEL_PATH), &mut assets)?;
     let mut window = create_window();
 
     loop {
+        // Process events
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return Ok(()),
@@ -27,6 +30,7 @@ pub fn run() -> anyhow::Result<()> {
             }
         }
 
+        // Render frame
         let camera_transform = camera_transform(window.size(), level.size());
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
@@ -50,7 +54,6 @@ fn create_window() -> RenderWindow {
 
 fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform {
     const WINDOW_VERTICAL_PADDING: f32 = 200.0;
-    let mut x = Transform::IDENTITY;
     let map_size = Vector2f::new(map_size.x as f32, map_size.y as f32);
     let window_size = Vector2f::new(window_size.x as f32, window_size.y as f32);
     let viewport_size = Vector2f::new(window_size.x, window_size.y - WINDOW_VERTICAL_PADDING);
@@ -62,6 +65,8 @@ fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform {
         scale_factors.y
     };
     let map_px_size = map_size / map_scale;
+
+    let mut x = Transform::IDENTITY;
     x.scale_with_center(map_scale, map_scale, 0f32, 0f32);
     x.translate(
         (map_px_size.x - viewport_size.x) / 2f32 + (viewport_size.x - window_size.x) / 2f32,
