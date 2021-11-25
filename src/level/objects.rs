@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::num::NonZeroU32;
 
 use sfml::{
@@ -6,7 +8,7 @@ use sfml::{
 };
 use tiled::{properties::PropertyValue, tile::Gid};
 
-use crate::{sprite_atlas::SpriteAtlas, tilesheet::Tilesheet};
+use crate::{graphics::SpriteAtlas, tilesheet::Tilesheet};
 
 pub enum CrateType {
     WithId(NonZeroU32),

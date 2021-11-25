@@ -13,6 +13,7 @@ use tiled::{error::TiledError, tile::Gid, tileset::Tileset};
 
 use thiserror::Error;
 
+/// A container for a tileset and the texture it references.
 pub struct Tilesheet {
     texture: SfBox<Texture>,
     tileset: Tileset,

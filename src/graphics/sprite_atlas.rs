@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use sfml::{
     graphics::{Drawable, IntRect, Sprite, Texture, Transformable},
     system::Vector2f,

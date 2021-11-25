@@ -9,9 +9,8 @@ use sfml::{
 };
 
 mod asset_manager;
+pub mod graphics;
 mod level;
-mod quadarray;
-mod sprite_atlas;
 mod tilesheet;
 
 pub fn run() -> anyhow::Result<()> {

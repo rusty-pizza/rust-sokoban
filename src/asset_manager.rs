@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{
     collections::HashMap,
     convert::{TryFrom, TryInto},
@@ -21,6 +23,7 @@ impl<'a> TryFrom<&'a Asset> for &'a Tilesheet {
     type Error = ();
 
     fn try_from(value: &'a Asset) -> Result<Self, Self::Error> {
+        #[allow(irrefutable_let_patterns)]
         if let Asset::Tilesheet(t) = value {
             Ok(t)
         } else {
