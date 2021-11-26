@@ -1,3 +1,5 @@
 fn main() {
-    sokoban::run();
+    if let Err(err) = sokoban::run() {
+        println!("{}", err)
+    }
 }
