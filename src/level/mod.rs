@@ -19,7 +19,7 @@ use crate::{asset_manager::AssetManager, graphics::QuadMeshable, tilesheet::Tile
 pub use self::error::MapLoadError;
 use self::objects::{Crate, CrateType, Goal};
 
-enum Floor {
+enum LevelTile {
     Solid,
     Hole,
     Walkable,
@@ -31,7 +31,7 @@ pub struct Level<'s> {
     crates: Vec<Crate<'s>>,
     goals: Vec<Goal<'s>>,
     size: Vector2u,
-    flooring: Vec<Floor>,
+    tiles: Vec<LevelTile>,
     tilesheet: &'s Tilesheet,
     vertices: Vec<Vertex>,
     pub background_color: Color,
@@ -58,7 +58,7 @@ impl<'s> Level<'s> {
         let (building_layer, floor_layer) =
             Self::get_building_and_floor_layers(&data.layers).ok_or(MapLoadError::InvalidLayers)?;
 
-        let flooring = Self::extract_flooring(&building_layer, tilesheet.tileset());
+        let tiles = Self::extract_level_tiles(&building_layer, tilesheet.tileset());
 
         if data.object_groups.len() != 1 {
             return Err(MapLoadError::InvalidObjectGroups);
@@ -130,7 +130,7 @@ impl<'s> Level<'s> {
             crates,
             goals,
             vertices,
-            flooring,
+            tiles,
             size,
             tilesheet,
             background_color,
@@ -141,6 +141,10 @@ impl<'s> Level<'s> {
     pub fn from_file(path: &Path, assets: &'s mut AssetManager) -> Result<Self, MapLoadError> {
         let map = Map::parse_file(path)?;
         Self::from_map(&map, assets)
+    }
+
+    pub fn size(&self) -> Vector2u {
+        self.size
     }
 
     fn get_building_and_floor_layers(
@@ -158,20 +162,20 @@ impl<'s> Level<'s> {
         }
     }
 
-    fn extract_flooring(building_layer: &Vec<LayerTile>, tileset: &Tileset) -> Vec<Floor> {
+    fn extract_level_tiles(building_layer: &Vec<LayerTile>, tileset: &Tileset) -> Vec<LevelTile> {
         building_layer
             .iter()
             .map(|tile| {
                 if tile.gid == Gid::EMPTY {
-                    return Floor::Walkable;
+                    return LevelTile::Walkable;
                 }
 
                 let tile_data = tileset.get_tile_by_gid(tile.gid);
 
                 match tile_data.and_then(|t| t.tile_type.as_deref()) {
-                    Some("solid") => Floor::Solid,
-                    Some("hole") => Floor::Hole,
-                    _ => Floor::Walkable,
+                    Some("solid") => LevelTile::Solid,
+                    Some("hole") => LevelTile::Hole,
+                    _ => LevelTile::Walkable,
                 }
             })
             .collect::<Vec<_>>()
@@ -214,10 +218,6 @@ impl<'s> Level<'s> {
         }
 
         vertices
-    }
-
-    pub fn size(&self) -> Vector2u {
-        self.size
     }
 }
 
