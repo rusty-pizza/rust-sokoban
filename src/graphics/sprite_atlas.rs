@@ -5,6 +5,8 @@ use sfml::{
     system::Vector2f,
 };
 
+/// A sprite access point for textures that have more than a single sprite.
+/// Each sprite is identified as a "frame" of the atlas.
 #[derive(Debug)]
 pub struct SpriteAtlas<'t> {
     frames: Vec<IntRect>,
@@ -13,6 +15,7 @@ pub struct SpriteAtlas<'t> {
 }
 
 impl<'t> SpriteAtlas<'t> {
+    /// Crates a new sprite atlas with a given texture and frames as rects in pixel coordinates.
     pub fn with_texture_and_frames(texture: &'t Texture, frames: &[IntRect]) -> Self {
         Self {
             current_frame: 0,

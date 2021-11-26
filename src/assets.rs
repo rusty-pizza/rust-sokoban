@@ -1,3 +1,5 @@
+//! Structs related to asset management.
+
 #![allow(dead_code)]
 
 use std::{
@@ -7,8 +9,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::tilesheet::Tilesheet;
+use crate::graphics::Tilesheet;
 
+/// Any object that is loaded from a path, may be reused and requires management outside of its
+/// users' scope, such as tilesheets or textures.
 pub enum Asset {
     Tilesheet(Tilesheet),
 }
@@ -32,22 +36,31 @@ impl<'a> TryFrom<&'a Asset> for &'a Tilesheet {
     }
 }
 
+/// A simple asset container that allows inserting and obtaining them.
 pub struct AssetManager {
     assets: HashMap<PathBuf, Asset>,
 }
 
 impl AssetManager {
+    /// Creates a new asset manager.
     pub fn new() -> Self {
         Self {
             assets: HashMap::new(),
         }
     }
 
+    /// Obtains an asset from a specified path if already loaded and it exists.
     pub fn get_asset(&self, path: &Path) -> Option<&Asset> {
         self.assets.get(path)
     }
 
-    pub fn get_or_load_asset<'a, T>(&'a mut self, path: &Path, asset: T) -> &'a T
+    /// Gets an asset associated to a path within the asset manager or otherwise inserts it in and
+    /// then returns it.
+    ///
+    /// # Panics
+    /// Panics if an asset already existed with the given path and its type doesn't match to the
+    /// given one.
+    pub fn get_or_insert_asset<'a, T>(&'a mut self, path: &Path, asset: T) -> &'a T
     where
         T: Into<Asset>,
         &'a T: TryFrom<&'a Asset>,

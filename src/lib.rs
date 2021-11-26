@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use asset_manager::AssetManager;
+use assets::AssetManager;
 use level::Level;
 use sfml::{
     graphics::{BlendMode, RenderStates, RenderTarget, RenderWindow, Transform},
@@ -8,13 +8,15 @@ use sfml::{
     window::{ContextSettings, Event, Style},
 };
 
-mod asset_manager;
+pub mod assets;
 pub mod graphics;
-mod level;
-mod tilesheet;
+pub mod level;
 
-const LEVEL_PATH: &'static str = "assets/levels/untitled.tmx";
+/// The path of the map of the first level loaded.
+pub const LEVEL_PATH: &'static str = "assets/levels/untitled.tmx";
 
+/// Run the game, returning on failure.
+/// Will load and display the [`Level`] at [`LEVEL_PATH`].
 pub fn run() -> anyhow::Result<()> {
     // Initialize
     let mut assets = AssetManager::new();

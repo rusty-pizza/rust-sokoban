@@ -3,6 +3,7 @@ use sfml::{
     system::Vector2f,
 };
 
+/// Represents a container which can be expanded with quads made out of vertices.
 pub trait QuadMeshable {
     fn add_quad(&mut self, position: Vector2f, size: f32, uv: FloatRect);
 }

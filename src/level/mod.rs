@@ -1,3 +1,7 @@
+//! Structures related to a sokoban level or puzzle.
+
+#![allow(dead_code)]
+
 mod error;
 mod objects;
 
@@ -14,9 +18,12 @@ use tiled::{
     tileset::Tileset,
 };
 
-use crate::{asset_manager::AssetManager, graphics::QuadMeshable, tilesheet::Tilesheet};
+use crate::{
+    assets::AssetManager,
+    graphics::{QuadMeshable, Tilesheet},
+};
 
-pub use self::error::MapLoadError;
+pub use self::error::LevelLoadError;
 use self::objects::{Crate, CrateType, Goal};
 
 enum LevelTile {
@@ -39,9 +46,9 @@ pub struct Level<'s> {
 
 impl<'s> Level<'s> {
     /// Load a sokoban level from a Tiled map along with a provided asset manager.
-    pub fn from_map(data: &Map, assets: &'s mut AssetManager) -> Result<Level<'s>, MapLoadError> {
+    pub fn from_map(data: &Map, assets: &'s mut AssetManager) -> Result<Level<'s>, LevelLoadError> {
         if data.infinite {
-            return Err(MapLoadError::NotFinite);
+            return Err(LevelLoadError::NotFinite);
         }
         if data.tilesets.len() != 1 {
             todo!("Support for maps with multiple tilesets")
@@ -50,23 +57,23 @@ impl<'s> Level<'s> {
         let tilesheet = {
             let tileset = data.tilesets[0].clone();
             let path = tileset.source.as_ref().unwrap().clone();
-            assets.get_or_load_asset(&path, Tilesheet::from_tileset(tileset)?)
+            assets.get_or_insert_asset(&path, Tilesheet::from_tileset(tileset)?)
         };
 
         let size = Vector2u::new(data.width, data.height);
 
-        let (building_layer, floor_layer) =
-            Self::get_building_and_floor_layers(&data.layers).ok_or(MapLoadError::InvalidLayers)?;
+        let (building_layer, floor_layer) = Self::get_building_and_floor_layers(&data.layers)
+            .ok_or(LevelLoadError::InvalidLayers)?;
 
         let tiles = Self::extract_level_tiles(&building_layer, tilesheet.tileset());
 
         if data.object_groups.len() != 1 {
-            return Err(MapLoadError::InvalidObjectGroups);
+            return Err(LevelLoadError::InvalidObjectGroups);
         }
 
         let objects = match data.object_groups.first() {
             Some(x) if x.name == "objects" => &x.objects,
-            _ => return Err(MapLoadError::InvalidObjectGroups),
+            _ => return Err(LevelLoadError::InvalidObjectGroups),
         };
 
         let (crates, goals, player_spawn) = {
@@ -103,19 +110,19 @@ impl<'s> Level<'s> {
                                 .expect("goal creation"),
                         )
                     }
-                    _ => return Err(MapLoadError::InvalidObject(object.clone())),
+                    _ => return Err(LevelLoadError::InvalidObject(object.clone())),
                 }
             }
 
             (
                 crates,
                 goals,
-                player_spawn.ok_or(MapLoadError::NoPlayerSpawn)?,
+                player_spawn.ok_or(LevelLoadError::NoPlayerSpawn)?,
             )
         };
 
         if goals.is_empty() || crates.is_empty() {
-            return Err(MapLoadError::NoGoalsOrCrates);
+            return Err(LevelLoadError::NoGoalsOrCrates);
         }
 
         let background_color = data
@@ -138,7 +145,7 @@ impl<'s> Level<'s> {
     }
 
     /// Loads a sokoban level from a specified path using a specified asset manager.
-    pub fn from_file(path: &Path, assets: &'s mut AssetManager) -> Result<Self, MapLoadError> {
+    pub fn from_file(path: &Path, assets: &'s mut AssetManager) -> Result<Self, LevelLoadError> {
         let map = Map::parse_file(path)?;
         Self::from_map(&map, assets)
     }

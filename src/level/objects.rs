@@ -1,3 +1,5 @@
+//! Dynamic objects that are owned by the level, such as crates and goals.
+
 #![allow(dead_code)]
 
 use std::num::NonZeroU32;
@@ -8,8 +10,10 @@ use sfml::{
 };
 use tiled::{properties::PropertyValue, tile::Gid};
 
-use crate::{graphics::SpriteAtlas, tilesheet::Tilesheet};
+use crate::{graphics::SpriteAtlas, graphics::Tilesheet};
 
+/// When applied to a crate, the crate's type. When applied to a goal, the crate type
+/// the goal accepts.
 pub enum CrateType {
     WithId(NonZeroU32),
     Any,
@@ -33,6 +37,7 @@ impl CrateType {
     }
 }
 
+/// A crate the player can move around.
 pub struct Crate<'s> {
     position: Vector2i,
     sprite_atlas: SpriteAtlas<'s>,
@@ -102,6 +107,7 @@ impl<'s> Drawable for Crate<'s> {
     }
 }
 
+/// Indicates where a specific type of crate should be put in a level.
 pub struct Goal<'s> {
     position: Vector2i,
     accepted_type: CrateType,

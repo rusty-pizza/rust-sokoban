@@ -1,10 +1,10 @@
 use thiserror::Error;
 use tiled::error::TiledError;
 
-use crate::tilesheet::TilesheetLoadError;
+use crate::graphics::TilesheetLoadError;
 
 #[derive(Debug, Error)]
-pub enum MapLoadError {
+pub enum LevelLoadError {
     #[error("No player spawn: There must be a single player spawn object per level map.")]
     NoPlayerSpawn,
     #[error("No goals or crates: There must be at least one goal and one crate per level.")]
