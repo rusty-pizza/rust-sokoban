@@ -4,6 +4,7 @@
 
 mod error;
 mod objects;
+mod player;
 
 use std::path::Path;
 
@@ -24,7 +25,10 @@ use crate::{
 };
 
 pub use self::error::LevelLoadError;
-use self::objects::{Crate, CrateType, Goal};
+use self::{
+    objects::{Crate, CrateType, Goal},
+    player::Player,
+};
 
 enum LevelTile {
     Solid,
@@ -42,6 +46,7 @@ pub struct Level<'s> {
     tilesheet: &'s Tilesheet,
     vertices: Vec<Vertex>,
     pub background_color: Color,
+    player: Player<'s>,
 }
 
 impl<'s> Level<'s> {
@@ -141,6 +146,7 @@ impl<'s> Level<'s> {
             size,
             tilesheet,
             background_color,
+            player: Player::new(player_spawn, tilesheet, Gid(53)).unwrap(),
         })
     }
 
@@ -244,5 +250,7 @@ impl<'s> Drawable for Level<'s> {
         for g in self.goals.iter() {
             target.draw_with_renderstates(g, &states);
         }
+
+        target.draw_with_renderstates(&self.player, states);
     }
 }
