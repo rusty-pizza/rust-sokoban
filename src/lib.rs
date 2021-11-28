@@ -13,14 +13,14 @@ pub mod graphics;
 pub mod level;
 
 /// The path of the map of the first level loaded.
-pub const LEVEL_PATH: &'static str = "assets/levels/untitled.tmx";
+pub const LEVEL_PATH: &'static str = "assets/levels/test.tmx";
 
 /// Run the game, returning on failure.
 /// Will load and display the [`Level`] at [`LEVEL_PATH`].
 pub fn run() -> anyhow::Result<()> {
     // Initialize
     let mut assets = AssetManager::new();
-    let level = Level::from_file(Path::new(LEVEL_PATH), &mut assets)?;
+    let mut level = Level::from_file(Path::new(LEVEL_PATH), &mut assets)?;
     let mut window = create_window();
 
     loop {
@@ -35,6 +35,8 @@ pub fn run() -> anyhow::Result<()> {
         // Render frame
         let camera_transform = camera_transform(window.size(), level.size());
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
+
+        level.update(std::time::Duration::default());
 
         window.clear(level.background_color);
         window.draw_with_renderstates(&level, &render_states);
