@@ -30,10 +30,30 @@ use self::{
     player::Player,
 };
 
-enum LevelTile {
+#[derive(Clone, Copy)]
+pub enum LevelTile {
     Solid,
     Hole,
     Walkable,
+}
+
+#[derive(Clone, Copy)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl From<Direction> for Vector2i {
+    fn from(d: Direction) -> Self {
+        match d {
+            Direction::Up => Vector2i::new(0, -1),
+            Direction::Down => Vector2i::new(0, 1),
+            Direction::Left => Vector2i::new(-1, 0),
+            Direction::Right => Vector2i::new(1, 0),
+        }
+    }
 }
 
 /// Represents a sokoban level or puzzle.
@@ -47,6 +67,7 @@ pub struct Level<'s> {
     vertices: Vec<Vertex>,
     pub background_color: Color,
     player: Player<'s>,
+    key_states: [bool; 4],
 }
 
 impl<'s> Level<'s> {
@@ -147,6 +168,7 @@ impl<'s> Level<'s> {
             tilesheet,
             background_color,
             player: Player::new(player_spawn, tilesheet, Gid(53)).unwrap(),
+            key_states: [false; 4],
         })
     }
 
@@ -154,6 +176,74 @@ impl<'s> Level<'s> {
     pub fn from_file(path: &Path, assets: &'s mut AssetManager) -> Result<Self, LevelLoadError> {
         let map = Map::parse_file(path)?;
         Self::from_map(&map, assets)
+    }
+
+    pub fn update(&mut self, _delta: std::time::Duration) {
+        use sfml::window::Key;
+        let frame_key_states = [
+            Key::W.is_pressed(),
+            Key::S.is_pressed(),
+            Key::A.is_pressed(),
+            Key::D.is_pressed(),
+        ];
+        let direction = match frame_key_states {
+            [true, false, false, false] => Some(Direction::Up),
+            [false, true, false, false] => Some(Direction::Down),
+            [false, false, true, false] => Some(Direction::Left),
+            [false, false, false, true] => Some(Direction::Right),
+            _ => None,
+        };
+
+        if let Some(direction) = direction {
+            if self.key_states == [false; 4] {
+                self.move_player(direction);
+            }
+        }
+        self.key_states = frame_key_states;
+    }
+
+    pub fn get_tile(&self, pos: Vector2i) -> Option<LevelTile> {
+        self.tiles
+            .get((pos.x + pos.y * self.size.x as i32) as usize)
+            .copied()
+    }
+
+    pub fn move_player(&mut self, direction: Direction) {
+        let movement: Vector2i = direction.into();
+
+        let cell_to_move_to = self.player.position() + movement;
+        let tile_to_move_to = self.get_tile(cell_to_move_to);
+
+        let mut crate_to_move_to = None;
+        let crate_target_cell = cell_to_move_to + movement;
+        let crate_target_tile = self.get_tile(crate_target_cell);
+        let mut crate_in_target_cell = None;
+        for c in self.crates.iter_mut() {
+            if !c.in_hole() {
+                let x = c.position();
+                if x == cell_to_move_to {
+                    crate_to_move_to = Some(c)
+                } else if x == crate_target_cell {
+                    crate_in_target_cell = Some(c)
+                }
+            }
+        }
+
+        match (
+            tile_to_move_to,
+            crate_to_move_to,
+            crate_target_tile,
+            crate_in_target_cell,
+        ) {
+            (Some(LevelTile::Walkable), None, _, _) => {
+                self.player.set_position(self.player.position() + movement)
+            }
+            (Some(LevelTile::Walkable), Some(c), Some(LevelTile::Walkable), None) => {
+                self.player.set_position(self.player.position() + movement);
+                c.set_position(c.position() + movement);
+            }
+            _ => return,
+        }
     }
 
     pub fn size(&self) -> Vector2u {

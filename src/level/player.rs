@@ -24,6 +24,16 @@ impl<'a> Player<'a> {
 
         Some(Player { position, atlas })
     }
+
+    pub fn set_position(&mut self, position: Vector2i) {
+        self.position = position;
+        self.atlas
+            .set_position(Vector2f::new(position.x as f32, position.y as f32));
+    }
+
+    pub fn position(&self) -> Vector2i {
+        self.position
+    }
 }
 
 impl<'a> Drawable for Player<'a> {

@@ -42,6 +42,7 @@ pub struct Crate<'s> {
     position: Vector2i,
     sprite_atlas: SpriteAtlas<'s>,
     crate_type: CrateType,
+    in_hole: bool,
 }
 
 impl<'s> Crate<'s> {
@@ -93,7 +94,27 @@ impl<'s> Crate<'s> {
             position,
             crate_type,
             sprite_atlas,
+            in_hole: false,
         })
+    }
+
+    pub fn position(&self) -> Vector2i {
+        self.position
+    }
+
+    pub fn set_position(&mut self, position: Vector2i) {
+        self.position = position;
+        self.sprite_atlas
+            .set_position(Vector2f::new(position.x as f32, position.y as f32));
+    }
+
+    pub fn in_hole(&self) -> bool {
+        self.in_hole
+    }
+
+    pub fn set_in_hole(&mut self, in_hole: bool) {
+        self.in_hole = in_hole;
+        self.sprite_atlas.set_frame(Self::DROPPED_FRAME).unwrap();
     }
 }
 
