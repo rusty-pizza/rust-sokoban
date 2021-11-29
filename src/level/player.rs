@@ -6,12 +6,13 @@ use tiled::tile::Gid;
 
 use crate::graphics::{SpriteAtlas, Tilesheet};
 
-pub struct Player<'a> {
+/// Represents the player inside of a level.
+pub struct Player<'s> {
     position: Vector2i,
-    atlas: SpriteAtlas<'a>,
+    atlas: SpriteAtlas<'s>,
 }
 
-impl<'a> Player<'a> {
+impl Player<'_> {
     pub fn new(position: Vector2i, tilesheet: &Tilesheet, gid: Gid) -> Option<Player> {
         let texture = tilesheet.texture();
         let rect = tilesheet.tile_rect(gid)?;
@@ -36,7 +37,7 @@ impl<'a> Player<'a> {
     }
 }
 
-impl<'a> Drawable for Player<'a> {
+impl Drawable for Player<'_> {
     fn draw<'s: 'shader, 'texture, 'shader, 'shader_texture>(
         &'s self,
         target: &mut dyn sfml::graphics::RenderTarget,

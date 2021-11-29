@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 mod error;
-mod objects;
+pub mod objects;
 mod player;
 
 use std::path::Path;
@@ -25,11 +25,10 @@ use crate::{
 };
 
 pub use self::error::LevelLoadError;
-use self::{
-    objects::{Crate, CrateType, Goal},
-    player::Player,
-};
+use self::objects::{Crate, CrateType, Goal};
+pub use self::player::Player;
 
+/// One of a level's tiles. Level tiles are inmutable because they are part of the mesh of it.
 #[derive(Clone, Copy)]
 pub enum LevelTile {
     Solid,
@@ -37,21 +36,22 @@ pub enum LevelTile {
     Walkable,
 }
 
+/// A cardinal direction.
 #[derive(Clone, Copy)]
 pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+    North,
+    South,
+    West,
+    East,
 }
 
 impl From<Direction> for Vector2i {
     fn from(d: Direction) -> Self {
         match d {
-            Direction::Up => Vector2i::new(0, -1),
-            Direction::Down => Vector2i::new(0, 1),
-            Direction::Left => Vector2i::new(-1, 0),
-            Direction::Right => Vector2i::new(1, 0),
+            Direction::North => Vector2i::new(0, -1),
+            Direction::South => Vector2i::new(0, 1),
+            Direction::West => Vector2i::new(-1, 0),
+            Direction::East => Vector2i::new(1, 0),
         }
     }
 }
@@ -67,9 +67,10 @@ pub struct Level<'s> {
     vertices: Vec<Vertex>,
     pub background_color: Color,
     player: Player<'s>,
-    key_states: [bool; 4],
+    last_key_states: [bool; 4],
 }
 
+/// Constructors & parsing-related functions
 impl<'s> Level<'s> {
     /// Load a sokoban level from a Tiled map along with a provided asset manager.
     pub fn from_map(data: &Map, assets: &'s mut AssetManager) -> Result<Level<'s>, LevelLoadError> {
@@ -168,7 +169,7 @@ impl<'s> Level<'s> {
             tilesheet,
             background_color,
             player: Player::new(player_spawn, tilesheet, Gid(53)).unwrap(),
-            key_states: [false; 4],
+            last_key_states: [false; 4],
         })
     }
 
@@ -178,78 +179,7 @@ impl<'s> Level<'s> {
         Self::from_map(&map, assets)
     }
 
-    pub fn update(&mut self, _delta: std::time::Duration) {
-        use sfml::window::Key;
-        let frame_key_states = [
-            Key::W.is_pressed(),
-            Key::S.is_pressed(),
-            Key::A.is_pressed(),
-            Key::D.is_pressed(),
-        ];
-        let direction = match frame_key_states {
-            [true, false, false, false] => Some(Direction::Up),
-            [false, true, false, false] => Some(Direction::Down),
-            [false, false, true, false] => Some(Direction::Left),
-            [false, false, false, true] => Some(Direction::Right),
-            _ => None,
-        };
-
-        if let Some(direction) = direction {
-            if self.key_states == [false; 4] {
-                self.move_player(direction);
-            }
-        }
-        self.key_states = frame_key_states;
-    }
-
-    pub fn get_tile(&self, pos: Vector2i) -> Option<LevelTile> {
-        self.tiles
-            .get((pos.x + pos.y * self.size.x as i32) as usize)
-            .copied()
-    }
-
-    pub fn move_player(&mut self, direction: Direction) {
-        let movement: Vector2i = direction.into();
-
-        let cell_to_move_to = self.player.position() + movement;
-        let tile_to_move_to = self.get_tile(cell_to_move_to);
-
-        let mut crate_to_move_to = None;
-        let crate_target_cell = cell_to_move_to + movement;
-        let crate_target_tile = self.get_tile(crate_target_cell);
-        let mut crate_in_target_cell = None;
-        for c in self.crates.iter_mut() {
-            if !c.in_hole() {
-                let x = c.position();
-                if x == cell_to_move_to {
-                    crate_to_move_to = Some(c)
-                } else if x == crate_target_cell {
-                    crate_in_target_cell = Some(c)
-                }
-            }
-        }
-
-        match (
-            tile_to_move_to,
-            crate_to_move_to,
-            crate_target_tile,
-            crate_in_target_cell,
-        ) {
-            (Some(LevelTile::Walkable), None, _, _) => {
-                self.player.set_position(self.player.position() + movement)
-            }
-            (Some(LevelTile::Walkable), Some(c), Some(LevelTile::Walkable), None) => {
-                self.player.set_position(self.player.position() + movement);
-                c.set_position(c.position() + movement);
-            }
-            _ => return,
-        }
-    }
-
-    pub fn size(&self) -> Vector2u {
-        self.size
-    }
-
+    /// Extracts the building and floor layers from the given Tiled ones.
     fn get_building_and_floor_layers(
         layers: &Vec<Layer>,
     ) -> Option<(Vec<LayerTile>, Vec<LayerTile>)> {
@@ -265,6 +195,7 @@ impl<'s> Level<'s> {
         }
     }
 
+    /// Extracts all level tiles from a given Tiled layer and its related tileset.
     fn extract_level_tiles(building_layer: &Vec<LayerTile>, tileset: &Tileset) -> Vec<LevelTile> {
         building_layer
             .iter()
@@ -284,6 +215,7 @@ impl<'s> Level<'s> {
             .collect::<Vec<_>>()
     }
 
+    /// Generates a static level mesh and returns it.
     fn generate_vertices(
         size_in_tiles: &Vector2u,
         building_layer: &Vec<LayerTile>,
@@ -321,6 +253,100 @@ impl<'s> Level<'s> {
         }
 
         vertices
+    }
+}
+
+/// Public instance functions
+impl Level<'_> {
+    /// Updates the level and the objects within it. Call every frame.
+    pub fn update(&mut self, _delta: std::time::Duration) {
+        use sfml::window::Key;
+        let frame_key_states = [
+            Key::W.is_pressed(),
+            Key::S.is_pressed(),
+            Key::A.is_pressed(),
+            Key::D.is_pressed(),
+        ];
+        let direction = match frame_key_states {
+            [true, false, false, false] => Some(Direction::North),
+            [false, true, false, false] => Some(Direction::South),
+            [false, false, true, false] => Some(Direction::West),
+            [false, false, false, true] => Some(Direction::East),
+            _ => None,
+        };
+
+        if let Some(direction) = direction {
+            if self.last_key_states == [false; 4] {
+                self.move_player(direction);
+            }
+        }
+        self.last_key_states = frame_key_states;
+    }
+
+    /// Gets a level tile in a specific position.
+    pub fn get_tile(&self, pos: Vector2i) -> Option<LevelTile> {
+        self.tiles
+            .get((pos.x + pos.y * self.size.x as i32) as usize)
+            .copied()
+    }
+
+    /// Moves the player one tile onto the given direction, if possible.
+    pub fn move_player(&mut self, direction: Direction) {
+        let movement: Vector2i = direction.into();
+
+        // Get all info about where the player is about to move to: Tile, crate on top of that tile,
+        // tile that the crate is being pushed to, and if there is another crate where the first one
+        // is being pushed to
+        let cell_to_move_to = self.player.position() + movement;
+        let tile_to_move_to = self.get_tile(cell_to_move_to);
+
+        let (crate_to_move_to, crate_target_tile, crate_in_target_cell) = {
+            let mut crate_to_move_to = None;
+            let crate_target_cell = cell_to_move_to + movement;
+            let crate_target_tile = self.get_tile(crate_target_cell);
+            let mut crate_in_target_cell = None;
+            for c in self.crates.iter_mut() {
+                if !c.in_hole() {
+                    let x = c.position();
+                    if x == cell_to_move_to {
+                        crate_to_move_to = Some(c)
+                    } else if x == crate_target_cell {
+                        crate_in_target_cell = Some(c)
+                    }
+                }
+            }
+
+            (crate_to_move_to, crate_target_tile, crate_in_target_cell)
+        };
+
+        match (
+            tile_to_move_to,
+            crate_to_move_to,
+            crate_target_tile,
+            crate_in_target_cell,
+        ) {
+            // If the next tile is walkable and there are no crates in the way, just move
+            (Some(LevelTile::Walkable), None, _, _) => {
+                self.player.set_position(self.player.position() + movement)
+            }
+            // If the next tile is walkable but there is a crate which can be pushed to a walkable spot,
+            // move the player and the crate
+            (Some(LevelTile::Walkable), Some(c), Some(LevelTile::Walkable), None) => {
+                self.player.set_position(self.player.position() + movement);
+                c.set_position(c.position() + movement);
+            }
+            // If the next tile is walkable but there is a crate which can be pushed into a hole, move the
+            // player and push the crate into the hole
+            (Some(LevelTile::Walkable), Some(_c), Some(LevelTile::Hole), None) => {
+                todo!("pushing crates into holes")
+            }
+            _ => (),
+        }
+    }
+
+    /// Returns the size in tiles of the level.
+    pub fn size(&self) -> Vector2u {
+        self.size
     }
 }
 

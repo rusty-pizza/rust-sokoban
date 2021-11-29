@@ -23,6 +23,8 @@ pub fn run() -> anyhow::Result<()> {
     let mut level = Level::from_file(Path::new(LEVEL_PATH), &mut assets)?;
     let mut window = create_window();
 
+    let mut last_frame_time = std::time::Instant::now();
+
     loop {
         // Process events
         while let Some(event) = window.poll_event() {
@@ -32,15 +34,21 @@ pub fn run() -> anyhow::Result<()> {
             }
         }
 
+        // Update
+        let this_frame_time = std::time::Instant::now();
+        let delta_time = this_frame_time - last_frame_time;
+
+        level.update(delta_time);
+
         // Render frame
         let camera_transform = camera_transform(window.size(), level.size());
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
-        level.update(std::time::Duration::default());
-
         window.clear(level.background_color);
         window.draw_with_renderstates(&level, &render_states);
         window.display();
+
+        last_frame_time = this_frame_time;
     }
 }
 
