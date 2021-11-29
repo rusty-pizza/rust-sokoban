@@ -1,5 +1,9 @@
 //! Structures related to a sokoban level or puzzle.
 
+// TODO: Create an `Action` enum that represents a player action. Replace move_player for
+// Level::do(Action) / Level::undo(Action). Return Result<()>, Err if couldn't do action.
+// This will allow to easily make an undo history.
+
 #![allow(dead_code)]
 
 mod error;
