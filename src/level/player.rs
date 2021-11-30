@@ -6,6 +6,8 @@ use tiled::tile::Gid;
 
 use crate::graphics::{SpriteAtlas, Tilesheet};
 
+// TODO: Reflect player direction & animation on sprite
+
 /// Represents the player inside of a level.
 pub struct Player<'s> {
     position: Vector2i,
