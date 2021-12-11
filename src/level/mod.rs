@@ -334,13 +334,25 @@ impl Level<'_> {
         } else {
             // we have a crate
             if tile_to_move_to == Some(LevelTile::Floor) {
-                let is_target_walkable =
-                    self.get_tile(cell_to_move_to + movement) == Some(LevelTile::Floor);
+                let target_position = cell_to_move_to + movement;
+                let is_crate_movable = self.get_tile(target_position) != Some(LevelTile::Solid);
 
-                if is_target_walkable {
+                if is_crate_movable {
                     self.player.set_position(cell_to_move_to);
-                    self.crates[crate_to_move_to_idx.unwrap()]
-                        .set_position(cell_to_move_to + movement);
+                    let is_there_crate_in_hole = self
+                        .crates
+                        .iter()
+                        .filter(|c| c.position() == target_position)
+                        .nth(0)
+                        .is_some();
+
+                    self.crates[crate_to_move_to_idx.unwrap()].set_position(target_position);
+
+                    if self.get_tile(target_position) == Some(LevelTile::Hole)
+                        && !is_there_crate_in_hole
+                    {
+                        self.crates[crate_to_move_to_idx.unwrap()].set_in_hole(true);
+                    }
                 }
             }
         }
