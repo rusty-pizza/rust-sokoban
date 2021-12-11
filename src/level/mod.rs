@@ -31,11 +31,11 @@ use self::objects::{Crate, CrateType, Goal};
 pub use self::player::Player;
 
 /// One of a level's tiles. Level tiles are inmutable because they are part of the mesh of it.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum LevelTile {
     Solid,
     Hole,
-    Walkable,
+    Floor,
 }
 
 /// A cardinal direction.
@@ -203,7 +203,7 @@ impl<'s> Level<'s> {
             .iter()
             .map(|tile| {
                 if tile.gid == Gid::EMPTY {
-                    return LevelTile::Walkable;
+                    return LevelTile::Floor;
                 }
 
                 let tile_data = tileset.get_tile_by_gid(tile.gid);
@@ -211,7 +211,7 @@ impl<'s> Level<'s> {
                 match tile_data.and_then(|t| t.tile_type.as_deref()) {
                     Some("solid") => LevelTile::Solid,
                     Some("hole") => LevelTile::Hole,
-                    _ => LevelTile::Walkable,
+                    _ => LevelTile::Floor,
                 }
             })
             .collect::<Vec<_>>()
@@ -300,49 +300,35 @@ impl Level<'_> {
         // tile that the crate is being pushed to, and if there is another crate where the first one
         // is being pushed to
         let cell_to_move_to = self.player.position() + movement;
-        let tile_to_move_to = self.get_tile(cell_to_move_to);
 
-        let (crate_to_move_to, crate_target_tile, crate_in_target_cell) = {
-            let mut crate_to_move_to = None;
-            let crate_target_cell = cell_to_move_to + movement;
-            let crate_target_tile = self.get_tile(crate_target_cell);
-            let mut crate_in_target_cell = None;
-            for c in self.crates.iter_mut() {
-                if !c.in_hole() {
-                    let x = c.position();
-                    if x == cell_to_move_to {
-                        crate_to_move_to = Some(c)
-                    } else if x == crate_target_cell {
-                        crate_in_target_cell = Some(c)
-                    }
+        let (tile_to_move_to, crate_to_move_to_idx) = {
+            let mut tile_to_move_to = self.get_tile(cell_to_move_to);
+            let crate_to_move_to_idx = self
+                .crates
+                .iter()
+                .enumerate()
+                .filter(|(_idx, c)| c.position() == cell_to_move_to)
+                .nth(0)
+                .and_then(|(idx, _ref)| Some(idx));
+
+            if crate_to_move_to_idx.is_some() {
+                let crate_target_cell = cell_to_move_to + movement;
+                if self
+                    .crates
+                    .iter()
+                    .filter(|c| c.position() == crate_target_cell)
+                    .nth(0)
+                    .is_some()
+                {
+                    tile_to_move_to = None;
                 }
             }
 
-            (crate_to_move_to, crate_target_tile, crate_in_target_cell)
+            (tile_to_move_to, crate_to_move_to_idx)
         };
 
-        match (
-            tile_to_move_to,
-            crate_to_move_to,
-            crate_target_tile,
-            crate_in_target_cell,
-        ) {
-            // If the next tile is walkable and there are no crates in the way, just move
-            (Some(LevelTile::Walkable), None, _, _) => {
-                self.player.set_position(self.player.position() + movement)
-            }
-            // If the next tile is walkable but there is a crate which can be pushed to a walkable spot,
-            // move the player and the crate
-            (Some(LevelTile::Walkable), Some(c), Some(LevelTile::Walkable), None) => {
-                self.player.set_position(self.player.position() + movement);
-                c.set_position(c.position() + movement);
-            }
-            // If the next tile is walkable but there is a crate which can be pushed into a hole, move the
-            // player and push the crate into the hole
-            (Some(LevelTile::Walkable), Some(_c), Some(LevelTile::Hole), None) => {
-                todo!("pushing crates into holes")
-            }
-            _ => (),
+        if crate_to_move_to_idx.is_none() && tile_to_move_to == Some(LevelTile::Floor) {
+            self.player.set_position(cell_to_move_to);
         }
     }
 
