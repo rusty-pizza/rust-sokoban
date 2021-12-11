@@ -327,8 +327,22 @@ impl Level<'_> {
             (tile_to_move_to, crate_to_move_to_idx)
         };
 
-        if crate_to_move_to_idx.is_none() && tile_to_move_to == Some(LevelTile::Floor) {
-            self.player.set_position(cell_to_move_to);
+        if crate_to_move_to_idx.is_none() {
+            if tile_to_move_to == Some(LevelTile::Floor) {
+                self.player.set_position(cell_to_move_to);
+            }
+        } else {
+            // we have a crate
+            if tile_to_move_to == Some(LevelTile::Floor) {
+                let is_target_walkable =
+                    self.get_tile(cell_to_move_to + movement) == Some(LevelTile::Floor);
+
+                if is_target_walkable {
+                    self.player.set_position(cell_to_move_to);
+                    self.crates[crate_to_move_to_idx.unwrap()]
+                        .set_position(cell_to_move_to + movement);
+                }
+            }
         }
     }
 
