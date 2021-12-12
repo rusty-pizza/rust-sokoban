@@ -296,33 +296,25 @@ impl Level<'_> {
     pub fn move_player(&mut self, direction: Direction) {
         let movement: Vector2i = direction.into();
 
-        // Get all info about where the player is about to move to: Tile, crate on top of that tile,
-        // tile that the crate is being pushed to, and if there is another crate where the first one
-        // is being pushed to
         let cell_to_move_to = self.player.position() + movement;
 
         let (tile_to_move_to, crate_to_move_to_idx) = {
-            let mut tile_to_move_to = self.get_tile(cell_to_move_to);
+            let is_there_crate_in_hole_in_tile_to_move_to = self
+                .crates
+                .iter()
+                .enumerate()
+                .any(|(_idx, c)| c.position() == cell_to_move_to && c.in_hole());
+
+            let tile_to_move_to = is_there_crate_in_hole_in_tile_to_move_to
+                .then(|| LevelTile::Floor)
+                .or_else(|| self.get_tile(cell_to_move_to));
+
             let crate_to_move_to_idx = self
                 .crates
                 .iter()
                 .enumerate()
-                .filter(|(_idx, c)| c.position() == cell_to_move_to)
-                .nth(0)
+                .find(|(_idx, c)| c.position() == cell_to_move_to && !c.in_hole())
                 .and_then(|(idx, _ref)| Some(idx));
-
-            if crate_to_move_to_idx.is_some() {
-                let crate_target_cell = cell_to_move_to + movement;
-                if self
-                    .crates
-                    .iter()
-                    .filter(|c| c.position() == crate_target_cell)
-                    .nth(0)
-                    .is_some()
-                {
-                    tile_to_move_to = None;
-                }
-            }
 
             (tile_to_move_to, crate_to_move_to_idx)
         };
@@ -335,16 +327,20 @@ impl Level<'_> {
             // we have a crate
             if tile_to_move_to == Some(LevelTile::Floor) {
                 let target_position = cell_to_move_to + movement;
-                let is_crate_movable = self.get_tile(target_position) != Some(LevelTile::Solid);
+
+                let is_target_solid = self.get_tile(target_position) == Some(LevelTile::Solid);
+
+                let is_there_crate_in_target = self
+                    .crates
+                    .iter()
+                    .any(|c| c.position() == target_position && !c.in_hole());
+
+                let is_crate_movable = !is_target_solid && !is_there_crate_in_target;
 
                 if is_crate_movable {
                     self.player.set_position(cell_to_move_to);
-                    let is_there_crate_in_hole = self
-                        .crates
-                        .iter()
-                        .filter(|c| c.position() == target_position)
-                        .nth(0)
-                        .is_some();
+                    let is_there_crate_in_hole =
+                        self.crates.iter().any(|c| c.position() == target_position);
 
                     self.crates[crate_to_move_to_idx.unwrap()].set_position(target_position);
 
