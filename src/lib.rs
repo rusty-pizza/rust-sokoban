@@ -41,7 +41,7 @@ pub fn run() -> anyhow::Result<()> {
         level.update(delta_time);
 
         // Render frame
-        let camera_transform = camera_transform(window.size(), level.size());
+        let camera_transform = camera_transform(window.size(), level.tilemap().size());
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
         window.clear(level.background_color);

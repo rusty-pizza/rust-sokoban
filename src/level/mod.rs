@@ -7,6 +7,7 @@
 mod error;
 pub mod objects;
 mod player;
+pub mod tilemap;
 
 use std::path::Path;
 
@@ -18,7 +19,6 @@ use tiled::{
     layers::{Layer, LayerData, LayerTile},
     map::Map,
     tile::Gid,
-    tileset::Tileset,
 };
 
 use crate::{
@@ -27,16 +27,11 @@ use crate::{
 };
 
 pub use self::error::LevelLoadError;
-use self::objects::{Crate, CrateType, Goal};
 pub use self::player::Player;
-
-/// One of a level's tiles. Level tiles are inmutable because they are part of the mesh of it.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum LevelTile {
-    Solid,
-    Hole,
-    Floor,
-}
+use self::{
+    objects::{Crate, Goal},
+    tilemap::{LevelTile, Tilemap},
+};
 
 /// A cardinal direction.
 #[derive(Clone, Copy)]
@@ -63,8 +58,7 @@ pub struct Level<'s> {
     player_spawn: Vector2i,
     crates: Vec<Crate<'s>>,
     goals: Vec<Goal<'s>>,
-    size: Vector2u,
-    tiles: Vec<LevelTile>,
+    tilemap: Tilemap,
     tilesheet: &'s Tilesheet,
     vertices: Vec<Vertex>,
     pub background_color: Color,
@@ -75,72 +69,51 @@ pub struct Level<'s> {
 /// Constructors & parsing-related functions
 impl<'s> Level<'s> {
     /// Load a sokoban level from a Tiled map along with a provided asset manager.
-    pub fn from_map(data: &Map, assets: &'s mut AssetManager) -> Result<Level<'s>, LevelLoadError> {
-        if data.infinite {
+    pub fn from_map(map: &Map, assets: &'s mut AssetManager) -> Result<Level<'s>, LevelLoadError> {
+        if map.infinite {
             return Err(LevelLoadError::NotFinite);
         }
-        if data.tilesets.len() != 1 {
+        if map.tilesets.len() != 1 {
             todo!("Support for maps with multiple tilesets")
         }
 
         let tilesheet = {
-            let tileset = data.tilesets[0].clone();
+            let tileset = map.tilesets[0].clone();
             let path = tileset.source.as_ref().unwrap().clone();
             assets.get_or_insert_asset(&path, Tilesheet::from_tileset(tileset)?)
         };
 
-        let size = Vector2u::new(data.width, data.height);
+        let size = Vector2u::new(map.width, map.height);
 
-        let (building_layer, floor_layer) = Self::get_building_and_floor_layers(&data.layers)
+        let (building_layer, floor_layer) = Self::get_building_and_floor_layers(&map.layers)
             .ok_or(LevelLoadError::InvalidLayers)?;
 
-        let tiles = Self::extract_level_tiles(&building_layer, tilesheet.tileset());
+        let tilemap = Tilemap::from_tiled_layer(size, &building_layer, tilesheet.tileset());
 
-        if data.object_groups.len() != 1 {
+        if map.object_groups.len() != 1 {
             return Err(LevelLoadError::InvalidObjectGroups);
         }
-
-        let objects = match data.object_groups.first() {
-            Some(x) if x.name == "objects" => &x.objects,
-            _ => return Err(LevelLoadError::InvalidObjectGroups),
-        };
 
         let (crates, goals, player_spawn) = {
             let mut crates = Vec::new();
             let mut goals = Vec::new();
             let mut player_spawn = None;
+
+            let objects = &map.object_groups[0].objects;
             for object in objects {
-                let position = Vector2i::new(
-                    (object.x / data.tile_width as f32) as i32,
-                    (object.y / data.tile_height as f32) as i32,
-                );
+                use objects::parsing::MapObject::{self, *};
 
-                let object_tile = tilesheet.tileset().get_tile_by_gid(object.gid);
+                match MapObject::from_tiled_object(object, map, tilesheet) {
+                    Some(Spawn { position }) => player_spawn = Some(position),
+                    Some(Crate(c)) => crates.push(c),
+                    Some(Goal(g)) => goals.push(g),
 
-                match object_tile
-                    .and_then(|t| Some(t.tile_type.as_deref()))
-                    .flatten()
-                {
-                    Some("spawn") => player_spawn = Some(position),
-                    Some("crate") => crates.push(
-                        Crate::new(position, &tilesheet, object.gid).expect("crate creation"),
-                    ),
-                    Some("goal") => {
-                        let accepted_style = object
-                            .properties
-                            .0
-                            .iter()
-                            .find(|&(name, _)| name == "accepts")
-                            .and_then(|(_, prop)| Some(CrateType::from_tiled_property(prop)))
-                            .unwrap_or_default();
-
-                        goals.push(
-                            Goal::new(position, accepted_style, &tilesheet, object.gid)
-                                .expect("goal creation"),
-                        )
-                    }
-                    _ => return Err(LevelLoadError::InvalidObject(object.clone())),
+                    None => return Err(LevelLoadError::InvalidObject(object.clone())),
                 }
+            }
+
+            if goals.is_empty() || crates.is_empty() {
+                return Err(LevelLoadError::NoGoalsOrCrates);
             }
 
             (
@@ -150,11 +123,9 @@ impl<'s> Level<'s> {
             )
         };
 
-        if goals.is_empty() || crates.is_empty() {
-            return Err(LevelLoadError::NoGoalsOrCrates);
-        }
+        let player = Player::new(player_spawn, tilesheet, Gid(53)).expect("constructing player");
 
-        let background_color = data
+        let background_color = map
             .background_color
             .and_then(|c| Some(Color::rgb(c.red, c.green, c.blue)))
             .unwrap_or(Color::BLACK);
@@ -166,11 +137,10 @@ impl<'s> Level<'s> {
             crates,
             goals,
             vertices,
-            tiles,
-            size,
+            tilemap,
             tilesheet,
             background_color,
-            player: Player::new(player_spawn, tilesheet, Gid(53)).unwrap(),
+            player,
             last_key_states: [false; 4],
         })
     }
@@ -185,8 +155,8 @@ impl<'s> Level<'s> {
     fn get_building_and_floor_layers(
         layers: &Vec<Layer>,
     ) -> Option<(Vec<LayerTile>, Vec<LayerTile>)> {
-        let building = layers.iter().filter(|l| l.name == "building").nth(0)?;
-        let floor = layers.iter().filter(|l| l.name == "floor").nth(0)?;
+        let building = layers.iter().find(|l| l.name == "building")?;
+        let floor = layers.iter().find(|l| l.name == "floor")?;
 
         match (&building.tiles, &floor.tiles) {
             (LayerData::Finite(building), LayerData::Finite(floor)) => Some((
@@ -195,26 +165,6 @@ impl<'s> Level<'s> {
             )),
             _ => None,
         }
-    }
-
-    /// Extracts all level tiles from a given Tiled layer and its related tileset.
-    fn extract_level_tiles(building_layer: &Vec<LayerTile>, tileset: &Tileset) -> Vec<LevelTile> {
-        building_layer
-            .iter()
-            .map(|tile| {
-                if tile.gid == Gid::EMPTY {
-                    return LevelTile::Floor;
-                }
-
-                let tile_data = tileset.get_tile_by_gid(tile.gid);
-
-                match tile_data.and_then(|t| t.tile_type.as_deref()) {
-                    Some("solid") => LevelTile::Solid,
-                    Some("hole") => LevelTile::Hole,
-                    _ => LevelTile::Floor,
-                }
-            })
-            .collect::<Vec<_>>()
     }
 
     /// Generates a static level mesh and returns it.
@@ -260,6 +210,11 @@ impl<'s> Level<'s> {
 
 /// Public instance functions
 impl Level<'_> {
+    /// The tilemap associated to the level.
+    pub fn tilemap(&self) -> &Tilemap {
+        &self.tilemap
+    }
+
     /// Updates the level and the objects within it. Call every frame.
     pub fn update(&mut self, _delta: std::time::Duration) {
         use sfml::window::Key;
@@ -285,78 +240,72 @@ impl Level<'_> {
         self.last_key_states = frame_key_states;
     }
 
-    /// Gets a level tile in a specific position.
-    pub fn get_tile(&self, pos: Vector2i) -> Option<LevelTile> {
-        self.tiles
-            .get((pos.x + pos.y * self.size.x as i32) as usize)
-            .copied()
-    }
-
     /// Moves the player one tile onto the given direction, if possible.
     pub fn move_player(&mut self, direction: Direction) {
         let movement: Vector2i = direction.into();
 
         let cell_to_move_to = self.player.position() + movement;
 
-        let (tile_to_move_to, crate_to_move_to_idx) = {
-            let is_there_crate_in_hole_in_tile_to_move_to = self
-                .crates
-                .iter()
-                .enumerate()
-                .any(|(_idx, c)| c.position() == cell_to_move_to && c.in_hole());
-
-            let tile_to_move_to = is_there_crate_in_hole_in_tile_to_move_to
-                .then(|| LevelTile::Floor)
-                .or_else(|| self.get_tile(cell_to_move_to));
-
-            let crate_to_move_to_idx = self
+        if self.is_cell_walkable(cell_to_move_to) {
+            let crate_to_move_idx = self
                 .crates
                 .iter()
                 .enumerate()
                 .find(|(_idx, c)| c.position() == cell_to_move_to && !c.in_hole())
                 .and_then(|(idx, _ref)| Some(idx));
 
-            (tile_to_move_to, crate_to_move_to_idx)
-        };
+            if let Some(crate_to_move_idx) = crate_to_move_idx {
+                let crate_target_position = cell_to_move_to + movement;
 
-        if crate_to_move_to_idx.is_none() {
-            if tile_to_move_to == Some(LevelTile::Floor) {
-                self.player.set_position(cell_to_move_to);
-            }
-        } else {
-            // we have a crate
-            if tile_to_move_to == Some(LevelTile::Floor) {
-                let target_position = cell_to_move_to + movement;
-
-                let is_target_solid = self.get_tile(target_position) == Some(LevelTile::Solid);
-
-                let is_there_crate_in_target = self
-                    .crates
-                    .iter()
-                    .any(|c| c.position() == target_position && !c.in_hole());
-
-                let is_crate_movable = !is_target_solid && !is_there_crate_in_target;
+                let is_crate_movable = !self.is_cell_obstructed(crate_target_position);
 
                 if is_crate_movable {
                     self.player.set_position(cell_to_move_to);
-                    let is_there_crate_in_hole =
-                        self.crates.iter().any(|c| c.position() == target_position);
+                    self.crates[crate_to_move_idx].set_position(crate_target_position);
 
-                    self.crates[crate_to_move_to_idx.unwrap()].set_position(target_position);
+                    let target_tile = self.tilemap.get_tile(crate_target_position);
+                    if target_tile == Some(LevelTile::Hole) {
+                        let is_hole_full = self
+                            .crates
+                            .iter()
+                            .any(|c| c.position() == crate_target_position && c.in_hole());
 
-                    if self.get_tile(target_position) == Some(LevelTile::Hole)
-                        && !is_there_crate_in_hole
-                    {
-                        self.crates[crate_to_move_to_idx.unwrap()].set_in_hole(true);
+                        if !is_hole_full {
+                            self.crates[crate_to_move_idx].set_in_hole(true);
+                        }
                     }
                 }
+            } else {
+                self.player.set_position(cell_to_move_to);
             }
         }
     }
 
-    /// Returns the size in tiles of the level.
-    pub fn size(&self) -> Vector2u {
-        self.size
+    /// Returns true if there is a solid tile or crate in the given position.
+    pub fn is_cell_obstructed(&self, position: Vector2i) -> bool {
+        let cell_tile_is_solid = self.tilemap.get_tile(position) == Some(LevelTile::Solid);
+        let cell_has_crate = self
+            .crates
+            .iter()
+            .any(|c| c.position() == position && !c.in_hole());
+        cell_tile_is_solid || cell_has_crate
+    }
+
+    /// Returns whether a given cell can be walked over or not, regardless of whether there is a
+    /// movable crate in that position or not.
+    pub fn is_cell_walkable(&self, position: Vector2i) -> bool {
+        let tile = self.tilemap.get_tile(position);
+        match tile {
+            Some(LevelTile::Hole) => {
+                let is_there_walkable_crate = self
+                    .crates
+                    .iter()
+                    .any(|c| c.position() == position && c.in_hole());
+                is_there_walkable_crate
+            }
+            Some(LevelTile::Floor) => true,
+            Some(LevelTile::Solid) | None => false,
+        }
     }
 }
 
@@ -366,16 +315,17 @@ impl<'s> Drawable for Level<'s> {
         target: &mut dyn sfml::graphics::RenderTarget,
         states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
-        let mut vao_rstate = states.clone();
-        vao_rstate.set_texture(Some(&self.tilesheet.texture()));
-        target.draw_primitives(&self.vertices, PrimitiveType::QUADS, &vao_rstate);
+        let mut level_rstate = states.clone();
+        level_rstate.set_texture(Some(&self.tilesheet.texture()));
+        target.draw_primitives(&self.vertices, PrimitiveType::QUADS, &level_rstate);
 
-        for c in self.crates.iter() {
-            target.draw_with_renderstates(c, &states);
-        }
-        for g in self.goals.iter() {
-            target.draw_with_renderstates(g, &states);
-        }
+        self.crates
+            .iter()
+            .for_each(|c| target.draw_with_renderstates(c, &states));
+
+        self.goals
+            .iter()
+            .for_each(|g| target.draw_with_renderstates(g, &states));
 
         target.draw_with_renderstates(&self.player, states);
     }

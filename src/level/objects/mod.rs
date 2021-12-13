@@ -1,4 +1,4 @@
-//! Dynamic objects that are owned by the level, such as crates and goals.
+//! Dynamic objects that are owned by the level, these being [`Crate`]s and [`Goal`]s.
 
 #![allow(dead_code)]
 
@@ -12,28 +12,39 @@ use tiled::{properties::PropertyValue, tile::Gid};
 
 use crate::{graphics::SpriteAtlas, graphics::Tilesheet};
 
+pub(super) mod parsing;
+
 /// When applied to a crate, the crate's type. When applied to a goal, the crate type
 /// the goal accepts.
-pub enum CrateType {
-    WithId(NonZeroU32),
-    Any,
-}
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct CrateStyle(NonZeroU32);
 
-impl Default for CrateType {
-    fn default() -> Self {
-        CrateType::Any
+impl CrateStyle {
+    pub(super) fn from_tiled_property(prop: &PropertyValue) -> Option<Self> {
+        if let PropertyValue::IntValue(style) = prop {
+            NonZeroU32::new(*style as u32).and_then(|id| Some(CrateStyle(id)))
+        } else {
+            None
+        }
     }
 }
 
-impl CrateType {
+pub enum AcceptedCrateStyle {
+    Specific(CrateStyle),
+    Any,
+}
+
+impl AcceptedCrateStyle {
     pub(super) fn from_tiled_property(prop: &PropertyValue) -> Self {
-        match prop {
-            PropertyValue::IntValue(style) => match NonZeroU32::new(*style as u32) {
-                Some(x) => CrateType::WithId(x),
-                None => CrateType::Any,
-            },
-            _ => CrateType::Any,
-        }
+        CrateStyle::from_tiled_property(prop)
+            .and_then(|style| Some(Self::Specific(style)))
+            .unwrap_or(Self::Any)
+    }
+}
+
+impl Default for AcceptedCrateStyle {
+    fn default() -> Self {
+        Self::Any
     }
 }
 
@@ -41,7 +52,7 @@ impl CrateType {
 pub struct Crate<'s> {
     position: Vector2i,
     sprite_atlas: SpriteAtlas<'s>,
-    crate_type: CrateType,
+    style: CrateStyle,
     in_hole: bool,
 }
 
@@ -56,26 +67,19 @@ impl<'s> Crate<'s> {
         let crate_type = tile
             .properties
             .0
-            .iter()
-            .find(|&(name, _)| name == "style")
-            .and_then(|(_, prop)| Some(CrateType::from_tiled_property(prop)))
-            .unwrap_or_default();
+            .get("style")
+            .and_then(|prop| CrateStyle::from_tiled_property(prop))?;
+
+        let get_frame_gid = |frame: usize| -> Option<Gid> {
+            let frames = &tile.animation.as_ref()?.frames;
+            Some(Gid(
+                frames.get(frame)?.tile_id + tilesheet.tileset().first_gid.0
+            ))
+        };
 
         let normal_tex_rect = tilesheet.tile_rect(gid)?;
-        let dropped_tex_rect = tilesheet.tile_rect(Gid(tile
-            .animation
-            .as_ref()?
-            .frames
-            .get(Self::DROPPED_FRAME)?
-            .tile_id
-            + tilesheet.tileset().first_gid.0))?;
-        let positioned_tex_rect = tilesheet.tile_rect(Gid(tile
-            .animation
-            .as_ref()?
-            .frames
-            .get(Self::POSITIONED_FRAME)?
-            .tile_id
-            + tilesheet.tileset().first_gid.0))?;
+        let dropped_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::DROPPED_FRAME)?)?;
+        let positioned_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::POSITIONED_FRAME)?)?;
 
         let sprite_atlas = {
             let mut sprite_atlas = SpriteAtlas::with_texture_and_frames(
@@ -92,7 +96,7 @@ impl<'s> Crate<'s> {
 
         Some(Self {
             position,
-            crate_type,
+            style: crate_type,
             sprite_atlas,
             in_hole: false,
         })
@@ -115,11 +119,11 @@ impl<'s> Crate<'s> {
     pub fn set_in_hole(&mut self, in_hole: bool) {
         self.in_hole = in_hole;
         self.sprite_atlas
-            .set_frame(if in_hole {
-                Self::DROPPED_FRAME
-            } else {
-                Self::NORMAL_FRAME
-            })
+            .set_frame(
+                in_hole
+                    .then(|| Self::DROPPED_FRAME)
+                    .unwrap_or(Self::NORMAL_FRAME),
+            )
             .unwrap();
     }
 }
@@ -134,31 +138,34 @@ impl<'s> Drawable for Crate<'s> {
     }
 }
 
-/// Indicates where a specific type of crate should be put in a level.
+/// Indicates where a certain style of crate should be put in a level.
 pub struct Goal<'s> {
     position: Vector2i,
-    accepted_type: CrateType,
+    accepted_style: AcceptedCrateStyle,
     sprite: Sprite<'s>,
 }
 
 impl<'s> Goal<'s> {
     pub fn new(
         position: Vector2i,
-        accepted_style: CrateType,
+        accepted_style: AcceptedCrateStyle,
         tilesheet: &'s Tilesheet,
         gid: Gid,
     ) -> Option<Self> {
-        tilesheet.tile_sprite(gid).map(|mut sprite| {
+        let sprite = {
+            let mut sprite = tilesheet.tile_sprite(gid)?;
             sprite.set_position(Vector2f::new(position.x as f32, position.y as f32));
             sprite.set_scale({
                 let rect = sprite.texture_rect();
                 Vector2f::new(1f32 / rect.width as f32, 1f32 / rect.height as f32)
             });
-            Self {
-                position,
-                accepted_type: accepted_style,
-                sprite,
-            }
+            sprite
+        };
+
+        Some(Self {
+            position,
+            accepted_style,
+            sprite,
         })
     }
 }
