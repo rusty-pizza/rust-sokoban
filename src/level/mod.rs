@@ -35,6 +35,7 @@ use self::{
 
 /// A cardinal direction.
 #[derive(Clone, Copy)]
+#[repr(usize)]
 pub enum Direction {
     North,
     South,
@@ -123,7 +124,7 @@ impl<'s> Level<'s> {
             )
         };
 
-        let player = Player::new(player_spawn, tilesheet, Gid(53)).expect("constructing player");
+        let player = Player::new(player_spawn, tilesheet).expect("constructing player");
 
         let background_color = map
             .background_color
@@ -260,7 +261,7 @@ impl Level<'_> {
                 let is_crate_movable = !self.is_cell_obstructed(crate_target_position);
 
                 if is_crate_movable {
-                    self.player.set_position(cell_to_move_to);
+                    self.player.set_transform(cell_to_move_to, direction);
                     self.crates[crate_to_move_idx].set_position(crate_target_position);
 
                     let target_tile = self.tilemap.get_tile(crate_target_position);
@@ -276,7 +277,7 @@ impl Level<'_> {
                     }
                 }
             } else {
-                self.player.set_position(cell_to_move_to);
+                self.player.set_transform(cell_to_move_to, direction);
             }
         }
     }
