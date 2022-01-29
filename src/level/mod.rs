@@ -218,28 +218,11 @@ impl Level<'_> {
 
     /// Updates the level and the objects within it. Call every frame.
     pub fn update(&mut self, _delta: std::time::Duration) {
-        use sfml::window::Key;
-        let frame_key_states = [
-            Key::W.is_pressed(),
-            Key::S.is_pressed(),
-            Key::A.is_pressed(),
-            Key::D.is_pressed(),
-        ];
-        let direction = match frame_key_states {
-            [true, false, false, false] => Some(Direction::North),
-            [false, true, false, false] => Some(Direction::South),
-            [false, false, true, false] => Some(Direction::West),
-            [false, false, false, true] => Some(Direction::East),
-            _ => None,
-        };
+        self.update_input();
+        self.update_crate_opacity();
+    }
 
-        if let Some(direction) = direction {
-            if self.last_key_states == [false; 4] {
-                self.move_player(direction);
-            }
-        }
-        self.last_key_states = frame_key_states;
-
+    fn update_crate_opacity(&mut self) {
         fn get_crates_on_top(crates: &[Crate]) -> Vec<usize> {
             let mut crates_on_top = Vec::new();
             for c in 0..crates.len() {
@@ -256,13 +239,55 @@ impl Level<'_> {
             crates_on_top
         }
 
-        for c in self.crates.iter_mut() {
+        self.crates.iter_mut().for_each(|c| {
             c.set_opaque(true);
-        }
+        });
 
-        for c in get_crates_on_top(&self.crates) {
+        get_crates_on_top(&self.crates).into_iter().for_each(|c| {
             self.crates[c].set_opaque(false);
+        });
+
+        self.goals.iter_mut().for_each(|g| g.set_done(false));
+        self.crates.iter_mut().for_each(|c| {
+            if !c.in_hole() {
+                c.set_is_positioned(false)
+            }
+        });
+
+        self.goals.iter_mut().for_each(|g| {
+            self.crates
+                .iter_mut()
+                .filter(|c| c.position() == g.position())
+                .nth(0)
+                .map(|c| (g, c))
+                .map(|(g, c)| {
+                    g.set_done(true);
+                    c.set_is_positioned(true);
+                });
+        })
+    }
+
+    fn update_input(&mut self) {
+        use sfml::window::Key;
+        let frame_key_states = [
+            Key::W.is_pressed(),
+            Key::S.is_pressed(),
+            Key::A.is_pressed(),
+            Key::D.is_pressed(),
+        ];
+        let direction = match frame_key_states {
+            [true, false, false, false] => Some(Direction::North),
+            [false, true, false, false] => Some(Direction::South),
+            [false, false, true, false] => Some(Direction::West),
+            [false, false, false, true] => Some(Direction::East),
+            _ => None,
+        };
+        if let Some(direction) = direction {
+            if self.last_key_states == [false; 4] {
+                self.move_player(direction);
+            }
         }
+        self.last_key_states = frame_key_states;
     }
 
     /// Moves the player one tile onto the given direction, if possible.

@@ -135,6 +135,16 @@ impl<'s> Crate<'s> {
             Self::TRANSLUCENT_ALPHA
         });
     }
+
+    pub fn set_is_positioned(&mut self, val: bool) {
+        self.sprite_atlas
+            .set_frame(if val {
+                Self::POSITIONED_FRAME
+            } else {
+                Self::NORMAL_FRAME
+            })
+            .unwrap();
+    }
 }
 
 impl<'s> Drawable for Crate<'s> {
@@ -151,31 +161,64 @@ impl<'s> Drawable for Crate<'s> {
 pub struct Goal<'s> {
     position: Vector2i,
     accepted_style: AcceptedCrateStyle,
-    sprite: Sprite<'s>,
+    sprite_atlas: SpriteAtlas<'s>,
 }
 
 impl<'s> Goal<'s> {
+    const PENDING_FRAME: usize = 0;
+    const DONE_FRAME: usize = 1;
+
     pub fn new(
         position: Vector2i,
         accepted_style: AcceptedCrateStyle,
         tilesheet: &'s Tilesheet,
         gid: Gid,
     ) -> Option<Self> {
-        let sprite = {
-            let mut sprite = tilesheet.tile_sprite(gid)?;
-            sprite.set_position(Vector2f::new(position.x as f32, position.y as f32));
-            sprite.set_scale({
-                let rect = sprite.texture_rect();
-                Vector2f::new(1f32 / rect.width as f32, 1f32 / rect.height as f32)
-            });
-            sprite
+        let tile = tilesheet.tileset().get_tile_by_gid(gid)?;
+
+        let get_frame_gid = |frame: usize| -> Option<Gid> {
+            let frames = &tile.animation.as_ref()?.frames;
+            Some(Gid(
+                frames.get(frame)?.tile_id + tilesheet.tileset().first_gid.0
+            ))
+        };
+
+        let pending_tex_rect = tilesheet.tile_rect(gid)?;
+        let done_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::DONE_FRAME)?)?;
+
+        let sprite_atlas = {
+            let mut sprite_atlas = SpriteAtlas::with_texture_and_frames(
+                tilesheet.texture(),
+                &[pending_tex_rect, done_tex_rect],
+            );
+            sprite_atlas.set_position(Vector2f::new(position.x as f32, position.y as f32));
+            sprite_atlas.set_scale(Vector2f::new(
+                1f32 / tilesheet.tile_size().x as f32,
+                1f32 / tilesheet.tile_size().y as f32,
+            ));
+            sprite_atlas
         };
 
         Some(Self {
             position,
             accepted_style,
-            sprite,
+            sprite_atlas,
         })
+    }
+
+    pub fn set_done(&mut self, val: bool) {
+        self.sprite_atlas
+            .set_frame(if val {
+                Self::DONE_FRAME
+            } else {
+                Self::PENDING_FRAME
+            })
+            .unwrap();
+    }
+
+    /// Get the goal's position.
+    pub fn position(&self) -> Vector2i {
+        self.position
     }
 }
 
@@ -185,6 +228,6 @@ impl<'s> Drawable for Goal<'s> {
         target: &mut dyn sfml::graphics::RenderTarget,
         states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
-        self.sprite.draw(target, states);
+        self.sprite_atlas.draw(target, states);
     }
 }

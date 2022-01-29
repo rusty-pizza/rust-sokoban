@@ -58,7 +58,12 @@
   </animation>
  </tile>
  <tile id="11" type="hole"/>
- <tile id="39" type="goal"/>
+ <tile id="39" type="goal">
+  <animation>
+   <frame tileid="39" duration="500"/>
+   <frame tileid="13" duration="500"/>
+  </animation>
+ </tile>
  <tile id="40" type="goal">
   <properties>
    <property name="accepts" type="int" value="1"/>
