@@ -239,6 +239,30 @@ impl Level<'_> {
             }
         }
         self.last_key_states = frame_key_states;
+
+        fn get_crates_on_top(crates: &[Crate]) -> Vec<usize> {
+            let mut crates_on_top = Vec::new();
+            for c in 0..crates.len() {
+                if crates[c].in_hole() {
+                    for c_on_top in 0..crates.len() {
+                        if c != c_on_top {
+                            if crates[c_on_top].position() == crates[c].position() {
+                                crates_on_top.push(c_on_top);
+                            }
+                        }
+                    }
+                }
+            }
+            crates_on_top
+        }
+
+        for c in self.crates.iter_mut() {
+            c.set_opaque(true);
+        }
+
+        for c in get_crates_on_top(&self.crates) {
+            self.crates[c].set_opaque(false);
+        }
     }
 
     /// Moves the player one tile onto the given direction, if possible.

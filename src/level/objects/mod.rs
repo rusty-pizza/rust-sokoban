@@ -60,7 +60,7 @@ impl<'s> Crate<'s> {
     const NORMAL_FRAME: usize = 0;
     const DROPPED_FRAME: usize = 1;
     const POSITIONED_FRAME: usize = 2;
-    const DEFAULT_ALPHA: u8 = 150;
+    const TRANSLUCENT_ALPHA: u8 = 150;
 
     pub fn new(position: Vector2i, tilesheet: &'s Tilesheet, gid: Gid) -> Option<Self> {
         let tile = tilesheet.tileset().get_tile_by_gid(gid)?;
@@ -82,7 +82,7 @@ impl<'s> Crate<'s> {
         let dropped_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::DROPPED_FRAME)?)?;
         let positioned_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::POSITIONED_FRAME)?)?;
 
-        let mut sprite_atlas = {
+        let sprite_atlas = {
             let mut sprite_atlas = SpriteAtlas::with_texture_and_frames(
                 tilesheet.texture(),
                 &[normal_tex_rect, dropped_tex_rect, positioned_tex_rect],
@@ -94,8 +94,6 @@ impl<'s> Crate<'s> {
             ));
             sprite_atlas
         };
-
-        sprite_atlas.set_alpha(Self::DEFAULT_ALPHA);
 
         Some(Self {
             position,
@@ -128,10 +126,13 @@ impl<'s> Crate<'s> {
                     .unwrap_or(Self::NORMAL_FRAME),
             )
             .unwrap();
-        self.sprite_atlas.set_alpha(if in_hole {
+    }
+
+    pub fn set_opaque(&mut self, val: bool) {
+        self.sprite_atlas.set_alpha(if val {
             u8::MAX
         } else {
-            Self::DEFAULT_ALPHA
+            Self::TRANSLUCENT_ALPHA
         });
     }
 }
