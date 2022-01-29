@@ -320,8 +320,16 @@ impl<'s> Drawable for Level<'s> {
         level_rstate.set_texture(Some(&self.tilesheet.texture()));
         target.draw_primitives(&self.vertices, PrimitiveType::QUADS, &level_rstate);
 
+        // draw crates in holes (underground) first
         self.crates
             .iter()
+            .filter(|c| c.in_hole())
+            .for_each(|c| target.draw_with_renderstates(c, &states));
+
+        // then draw the ones on top of the ground
+        self.crates
+            .iter()
+            .filter(|c| !c.in_hole())
             .for_each(|c| target.draw_with_renderstates(c, &states));
 
         self.goals

@@ -45,6 +45,12 @@ impl<'t> SpriteAtlas<'t> {
             Err(())
         }
     }
+
+    pub fn set_alpha(&mut self, alpha: u8) {
+        let mut color = self.sprite.color();
+        *color.alpha_mut() = alpha;
+        self.sprite.set_color(color);
+    }
 }
 
 impl Transformable for SpriteAtlas<'_> {
