@@ -216,6 +216,11 @@ impl Level<'_> {
         &self.tilemap
     }
 
+    /// Returns whether all the crates are in goals or not.
+    pub fn is_won(&self) -> bool {
+        self.goals.iter().all(|g| g.is_done())
+    }
+
     /// Updates the level and the objects within it. Call every frame.
     pub fn update(&mut self, _delta: std::time::Duration) {
         self.update_input();

@@ -216,6 +216,10 @@ impl<'s> Goal<'s> {
             .unwrap();
     }
 
+    pub fn is_done(&self) -> bool {
+        self.sprite_atlas.current_frame() == Self::DONE_FRAME
+    }
+
     /// Get the goal's position.
     pub fn position(&self) -> Vector2i {
         self.position
