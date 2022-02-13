@@ -3,6 +3,7 @@ use tiled::error::TiledError;
 
 use crate::graphics::TilesheetLoadError;
 
+/// Represents an error that has occurred while loading a level.
 #[derive(Debug, Error)]
 pub enum LevelLoadError {
     #[error("No player spawn: There must be a single player spawn object per level map.")]
@@ -22,7 +23,7 @@ pub enum LevelLoadError {
         #[source]
         TilesheetLoadError,
     ),
-    #[error("Invalid object groups: The first and single object group in the map must be called 'objects'.")]
+    #[error("Invalid object groups: There should be a single and only object group in the map.")]
     InvalidObjectGroups,
     #[error("Invalid object: {0:?}")]
     InvalidObject(tiled::objects::Object),
