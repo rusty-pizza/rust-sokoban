@@ -12,16 +12,13 @@ pub mod assets;
 pub mod graphics;
 pub mod level;
 
-/// The path of the map of the first level loaded.
-pub const LEVEL_PATHS: [&'static str; 2] = ["assets/levels/test.tmx", "assets/levels/untitled.tmx"];
-
 /// Run the game, returning on failure.
 /// Will load and display the [`Level`] at [`LEVEL_PATH`].
 pub fn run() -> anyhow::Result<()> {
     // Initialize
-    let mut assets = AssetManager::new();
+    let mut assets = AssetManager::load()?;
     let mut current_level_idx = 0;
-    let mut level = Level::from_file(Path::new(LEVEL_PATHS[current_level_idx]), &mut assets)?;
+    let mut level = Level::from_map(&assets.maps[0], &assets.tilesheet)?;
     let mut window = create_window();
 
     let mut last_frame_time = std::time::Instant::now();
@@ -42,12 +39,9 @@ pub fn run() -> anyhow::Result<()> {
         level.update(delta_time);
         if level.is_won() {
             current_level_idx += 1;
-            std::mem::replace(
-                &mut level,
-                Level::from_file(Path::new(LEVEL_PATHS[current_level_idx]), &mut assets)?,
-            );
+            level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
 
-            if current_level_idx >= LEVEL_PATHS.len() {
+            if current_level_idx >= assets::LEVEL_PATHS.len() {
                 println!("You won!");
                 return Ok(());
             }

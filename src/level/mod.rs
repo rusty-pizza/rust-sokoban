@@ -69,20 +69,14 @@ pub struct Level<'s> {
 
 /// Constructors & parsing-related functions
 impl<'s> Level<'s> {
-    /// Load a sokoban level from a Tiled map along with a provided asset manager.
-    pub fn from_map(map: &Map, assets: &'s mut AssetManager) -> Result<Level<'s>, LevelLoadError> {
+    /// Load a sokoban level from a Tiled map and its tilesheet.
+    pub fn from_map(map: &Map, tilesheet: &'s Tilesheet) -> Result<Level<'s>, LevelLoadError> {
         if map.infinite {
             return Err(LevelLoadError::NotFinite);
         }
         if map.tilesets.len() != 1 {
             todo!("Support for maps with multiple tilesets")
         }
-
-        let tilesheet = {
-            let tileset = map.tilesets[0].clone();
-            let path = tileset.source.as_ref().unwrap().clone();
-            assets.get_or_insert_asset(&path, Tilesheet::from_tileset(tileset)?)
-        };
 
         let size = Vector2u::new(map.width, map.height);
 
@@ -144,12 +138,6 @@ impl<'s> Level<'s> {
             player,
             last_key_states: [false; 4],
         })
-    }
-
-    /// Loads a sokoban level from a specified path using a specified asset manager.
-    pub fn from_file(path: &Path, assets: &'s mut AssetManager) -> Result<Self, LevelLoadError> {
-        let map = Map::parse_file(path)?;
-        Self::from_map(&map, assets)
     }
 
     /// Extracts the building and floor layers from the given Tiled ones.
