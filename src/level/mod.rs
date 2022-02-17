@@ -9,8 +9,6 @@ pub mod objects;
 mod player;
 pub mod tilemap;
 
-use std::path::Path;
-
 use sfml::{
     graphics::{Color, Drawable, PrimitiveType, Vertex},
     system::{Vector2f, Vector2i, Vector2u},
@@ -21,10 +19,7 @@ use tiled::{
     tile::Gid,
 };
 
-use crate::{
-    assets::AssetManager,
-    graphics::{QuadMeshable, Tilesheet},
-};
+use crate::graphics::{QuadMeshable, Tilesheet};
 
 pub use self::error::LevelLoadError;
 pub use self::player::Player;

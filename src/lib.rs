@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use assets::AssetManager;
 use level::Level;
 use sfml::{
@@ -16,7 +14,7 @@ pub mod level;
 /// Will load and display the [`Level`] at [`LEVEL_PATH`].
 pub fn run() -> anyhow::Result<()> {
     // Initialize
-    let mut assets = AssetManager::load()?;
+    let assets = AssetManager::load()?;
     let mut current_level_idx = 0;
     let mut level = Level::from_map(&assets.maps[0], &assets.tilesheet)?;
     let mut window = create_window();

@@ -5,7 +5,7 @@
 use std::num::NonZeroU32;
 
 use sfml::{
-    graphics::{Drawable, Sprite, Transformable},
+    graphics::{Drawable, Transformable},
     system::{Vector2f, Vector2i},
 };
 use tiled::{properties::PropertyValue, tile::Gid};

@@ -2,14 +2,9 @@
 
 #![allow(dead_code)]
 
-use std::{
-    collections::HashMap,
-    convert::{TryFrom, TryInto},
-    fmt::Debug,
-    path::{Path, PathBuf},
-};
+use std::path::Path;
 
-use tiled::{error::TiledError, map::Map};
+use tiled::map::Map;
 
 use crate::graphics::Tilesheet;
 
