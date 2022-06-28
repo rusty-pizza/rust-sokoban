@@ -14,6 +14,7 @@ use sfml::{
     audio::{Sound, SoundSource},
     graphics::{Color, Drawable, PrimitiveType, Vertex},
     system::{Vector2f, Vector2i, Vector2u},
+    window::{Event, Key},
 };
 use tiled::{
     layers::{Layer, LayerData, LayerTile},
@@ -64,7 +65,6 @@ pub struct Level<'s> {
     vertices: Vec<Vertex>,
     pub background_color: Color,
     player: Player<'s>,
-    last_key_states: [bool; 4],
 }
 
 /// Constructors & parsing-related functions
@@ -136,7 +136,6 @@ impl<'s> Level<'s> {
             tilesheet,
             background_color,
             player,
-            last_key_states: [false; 4],
         })
     }
 
@@ -209,9 +208,26 @@ impl Level<'_> {
         self.goals.iter().all(|g| g.is_done())
     }
 
+    pub fn handle_event(&mut self, context: Context, event: Event) {
+        match event {
+            Event::KeyPressed { code: Key::A, .. } => {
+                self.move_player(Direction::West, context);
+            }
+            Event::KeyPressed { code: Key::W, .. } => {
+                self.move_player(Direction::North, context);
+            }
+            Event::KeyPressed { code: Key::S, .. } => {
+                self.move_player(Direction::South, context);
+            }
+            Event::KeyPressed { code: Key::D, .. } => {
+                self.move_player(Direction::East, context);
+            }
+            _ => (),
+        }
+    }
+
     /// Updates the level and the objects within it. Call every frame.
     pub fn update(&mut self, context: Context, _delta: std::time::Duration) {
-        self.update_input(context);
         self.update_crate_opacity();
     }
 
@@ -258,29 +274,6 @@ impl Level<'_> {
                     c.set_is_positioned(true);
                 });
         })
-    }
-
-    fn update_input(&mut self, context: Context) {
-        use sfml::window::Key;
-        let frame_key_states = [
-            Key::W.is_pressed(),
-            Key::S.is_pressed(),
-            Key::A.is_pressed(),
-            Key::D.is_pressed(),
-        ];
-        let direction = match frame_key_states {
-            [true, false, false, false] => Some(Direction::North),
-            [false, true, false, false] => Some(Direction::South),
-            [false, false, true, false] => Some(Direction::West),
-            [false, false, false, true] => Some(Direction::East),
-            _ => None,
-        };
-        if let Some(direction) = direction {
-            if self.last_key_states == [false; 4] {
-                self.move_player(direction, context);
-            }
-        }
-        self.last_key_states = frame_key_states;
     }
 
     /// Moves the player one tile onto the given direction, if possible.

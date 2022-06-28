@@ -31,7 +31,13 @@ pub fn run() -> anyhow::Result<()> {
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return Ok(()),
-                _ => (),
+                _ => level.handle_event(
+                    Context {
+                        assets: &assets,
+                        sound: &mut sound,
+                    },
+                    event,
+                ),
             }
         }
 
@@ -39,11 +45,13 @@ pub fn run() -> anyhow::Result<()> {
         let this_frame_time = std::time::Instant::now();
         let delta_time = this_frame_time - last_frame_time;
 
-        let context = Context {
-            assets: &assets,
-            sound: &mut sound,
-        };
-        level.update(context, delta_time);
+        level.update(
+            Context {
+                assets: &assets,
+                sound: &mut sound,
+            },
+            delta_time,
+        );
         if level.is_won() {
             current_level_idx += 1;
 
