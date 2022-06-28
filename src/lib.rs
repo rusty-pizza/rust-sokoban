@@ -46,11 +46,12 @@ pub fn run() -> anyhow::Result<()> {
         level.update(context, delta_time);
         if level.is_won() {
             current_level_idx += 1;
-            level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
 
             if current_level_idx >= assets::LEVEL_PATHS.len() {
                 println!("You won!");
                 return Ok(());
+            } else {
+                level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
             }
         }
         sound.update();
