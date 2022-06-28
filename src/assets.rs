@@ -4,14 +4,17 @@
 
 use std::path::Path;
 
+use sfml::{audio::SoundBuffer, SfBox};
 use tiled::map::Map;
 
 use crate::graphics::Tilesheet;
 
 pub const LEVEL_PATHS: [&'static str; 2] = ["assets/levels/test.tmx", "assets/levels/untitled.tmx"];
+pub const SOUND_DIR: &'static str = "assets/sound";
 
 pub struct AssetManager {
     pub maps: Vec<Map>,
+    pub walk_sounds: Vec<SfBox<SoundBuffer>>,
     pub tilesheet: Tilesheet,
 }
 
@@ -25,6 +28,18 @@ impl AssetManager {
                 .iter()
                 .map(|path| Map::parse_file(Path::new(path)))
                 .collect::<Result<Vec<_>, _>>()?,
+            walk_sounds: std::fs::read_dir(Path::new(SOUND_DIR))
+                .expect("could not inspect the sounds directory")
+                .map(|entry| {
+                    entry
+                        .expect("could not read file in sounds directory")
+                        .path()
+                })
+                .map(|path| {
+                    SoundBuffer::from_file(path.to_str().unwrap())
+                        .expect("could not read sound file")
+                })
+                .collect(),
         })
     }
 }

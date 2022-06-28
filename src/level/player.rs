@@ -1,8 +1,8 @@
 use sfml::{
-    graphics::{Drawable, Transformable, Rect},
+    graphics::{Drawable, Rect, Transformable},
     system::{Vector2f, Vector2i},
 };
-use tiled::{tile::Gid, properties::PropertyValue};
+use tiled::{properties::PropertyValue, tile::Gid};
 
 use crate::graphics::{SpriteAtlas, Tilesheet};
 
@@ -25,7 +25,7 @@ impl Player<'_> {
                 PropertyValue::IntValue(x) => {
                     tilesheet.tile_rect(Gid(*x as u32 + tilesheet.tileset().first_gid.0))
                 }
-                _ => None
+                _ => None,
             }
         };
 
@@ -33,7 +33,10 @@ impl Player<'_> {
         let south_frame = get_rect("player_down")?;
         let east_frame = get_rect("player_right")?;
         let west_frame = get_rect("player_left")?;
-        let mut atlas = SpriteAtlas::with_texture_and_frames(texture, &[north_frame, south_frame, east_frame, west_frame]);
+        let mut atlas = SpriteAtlas::with_texture_and_frames(
+            texture,
+            &[north_frame, south_frame, east_frame, west_frame],
+        );
 
         atlas.set_position(Vector2f::new(position.x as f32, position.y as f32));
         atlas.set_scale(Vector2f::new(
@@ -41,7 +44,11 @@ impl Player<'_> {
             1f32 / tilesheet.tile_size().y as f32,
         ));
 
-        Some(Player { position, atlas, direction: Direction::South })
+        Some(Player {
+            position,
+            atlas,
+            direction: Direction::South,
+        })
     }
 
     pub fn set_transform(&mut self, position: Vector2i, direction: Direction) {

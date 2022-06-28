@@ -1,14 +1,18 @@
 use assets::AssetManager;
+use context::Context;
 use level::Level;
 use sfml::{
     graphics::{BlendMode, RenderStates, RenderTarget, RenderWindow, Transform},
     system::{Vector2f, Vector2u},
     window::{ContextSettings, Event, Style},
 };
+use sound_manager::SoundManager;
 
 pub mod assets;
+pub mod context;
 pub mod graphics;
 pub mod level;
+pub mod sound_manager;
 
 /// Run the game, returning on failure.
 /// Will load and display the [`Level`] at [`LEVEL_PATH`].
@@ -18,6 +22,7 @@ pub fn run() -> anyhow::Result<()> {
     let mut current_level_idx = 0;
     let mut level = Level::from_map(&assets.maps[0], &assets.tilesheet)?;
     let mut window = create_window();
+    let mut sound = SoundManager::new();
 
     let mut last_frame_time = std::time::Instant::now();
 
@@ -34,7 +39,11 @@ pub fn run() -> anyhow::Result<()> {
         let this_frame_time = std::time::Instant::now();
         let delta_time = this_frame_time - last_frame_time;
 
-        level.update(delta_time);
+        let context = Context {
+            assets: &assets,
+            sound: &mut sound,
+        };
+        level.update(context, delta_time);
         if level.is_won() {
             current_level_idx += 1;
             level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
@@ -44,6 +53,7 @@ pub fn run() -> anyhow::Result<()> {
                 return Ok(());
             }
         }
+        sound.update();
 
         // Render frame
         let camera_transform = camera_transform(window.size(), level.tilemap().size());

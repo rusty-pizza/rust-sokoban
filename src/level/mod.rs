@@ -9,7 +9,9 @@ pub mod objects;
 mod player;
 pub mod tilemap;
 
+use rand::{prelude::SliceRandom, thread_rng};
 use sfml::{
+    audio::{Sound, SoundSource},
     graphics::{Color, Drawable, PrimitiveType, Vertex},
     system::{Vector2f, Vector2i, Vector2u},
 };
@@ -19,7 +21,10 @@ use tiled::{
     tile::Gid,
 };
 
-use crate::graphics::{QuadMeshable, Tilesheet};
+use crate::{
+    context::Context,
+    graphics::{QuadMeshable, Tilesheet},
+};
 
 pub use self::error::LevelLoadError;
 pub use self::player::Player;
@@ -205,8 +210,8 @@ impl Level<'_> {
     }
 
     /// Updates the level and the objects within it. Call every frame.
-    pub fn update(&mut self, _delta: std::time::Duration) {
-        self.update_input();
+    pub fn update(&mut self, context: Context, _delta: std::time::Duration) {
+        self.update_input(context);
         self.update_crate_opacity();
     }
 
@@ -255,7 +260,7 @@ impl Level<'_> {
         })
     }
 
-    fn update_input(&mut self) {
+    fn update_input(&mut self, context: Context) {
         use sfml::window::Key;
         let frame_key_states = [
             Key::W.is_pressed(),
@@ -272,17 +277,30 @@ impl Level<'_> {
         };
         if let Some(direction) = direction {
             if self.last_key_states == [false; 4] {
-                self.move_player(direction);
+                self.move_player(direction, context);
             }
         }
         self.last_key_states = frame_key_states;
     }
 
     /// Moves the player one tile onto the given direction, if possible.
-    pub fn move_player(&mut self, direction: Direction) {
+    pub fn move_player(&mut self, direction: Direction, context: Context) {
         let movement: Vector2i = direction.into();
 
         let cell_to_move_to = self.player.position() + movement;
+
+        let mut play_move_sound = move || {
+            let buf_to_use = context
+                .assets
+                .walk_sounds
+                .choose(&mut thread_rng())
+                .expect("No walk sounds to play");
+
+            let mut sound = Sound::with_buffer(buf_to_use);
+            sound.set_volume(40.);
+            sound.play();
+            context.sound.add_sound(sound);
+        };
 
         if self.is_cell_walkable(cell_to_move_to) {
             let crate_to_move_idx = self
@@ -299,6 +317,7 @@ impl Level<'_> {
 
                 if is_crate_movable {
                     self.player.set_transform(cell_to_move_to, direction);
+                    play_move_sound();
                     self.crates[crate_to_move_idx].set_position(crate_target_position);
 
                     let target_tile = self.tilemap.get_tile(crate_target_position);
@@ -315,6 +334,7 @@ impl Level<'_> {
                 }
             } else {
                 self.player.set_transform(cell_to_move_to, direction);
+                play_move_sound();
             }
         }
     }
