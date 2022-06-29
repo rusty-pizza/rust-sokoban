@@ -43,6 +43,7 @@ impl Player<'_> {
             1f32 / tilesheet.tile_size().x as f32,
             1f32 / tilesheet.tile_size().y as f32,
         ));
+        atlas.set_frame(Direction::South as usize).unwrap();
 
         Some(Player {
             position,
