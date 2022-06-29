@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+mod action;
+use action::*;
 mod error;
 pub mod objects;
 mod player;
@@ -60,155 +62,6 @@ impl From<Direction> for Vector2i {
             Direction::South => Vector2i::new(0, 1),
             Direction::West => Vector2i::new(-1, 0),
             Direction::East => Vector2i::new(1, 0),
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-enum Action {
-    /// Pushes a crate forwards and moves the player in the direction given.
-    /// The player will look in the direction given.
-    Push {
-        direction: Direction,
-        look_direction: Direction,
-    },
-    /// Pulls or moves backwards in the direction given; e.g. pulling east will move the player to
-    /// the east, along with any crate directly to its west.
-    /// The player will look in the direction given.
-    ///
-    /// It will pull out crates from holes!
-    Pull {
-        direction: Direction,
-        look_direction: Direction,
-    },
-}
-
-impl Action {
-    /// Applies this action to the level given, using an application context.
-    /// Returns the reciprocal if everything went correctly.
-    fn apply(self, level: &mut Level) -> Result<Action, ()> {
-        match self {
-            Action::Push {
-                direction,
-                look_direction,
-            } => {
-                let previous_look_direction = level.player.direction();
-                let movement: Vector2i = direction.into();
-
-                let cell_to_move_to = level.player.position() + movement;
-
-                if level.is_cell_walkable(cell_to_move_to) {
-                    let crate_to_move_idx = level
-                        .crates
-                        .iter()
-                        .enumerate()
-                        .find(|(_idx, c)| c.position() == cell_to_move_to && !c.in_hole())
-                        .and_then(|(idx, _ref)| Some(idx));
-
-                    if let Some(crate_to_move_idx) = crate_to_move_idx {
-                        let crate_target_position = cell_to_move_to + movement;
-
-                        let is_crate_movable = !level.is_cell_obstructed(crate_target_position);
-
-                        if is_crate_movable {
-                            // Can move and we are pushing a crate with ourselves
-                            level.player.set_transform(cell_to_move_to, look_direction);
-                            level.crates[crate_to_move_idx].set_position(crate_target_position);
-
-                            let target_tile = level.tilemap.get_tile(crate_target_position);
-                            if target_tile == Some(LevelTile::Hole) {
-                                let is_hole_full = level
-                                    .crates
-                                    .iter()
-                                    .any(|c| c.position() == crate_target_position && c.in_hole());
-
-                                if !is_hole_full {
-                                    level.crates[crate_to_move_idx].set_in_hole(true);
-                                }
-                            }
-
-                            Ok(Action::Pull {
-                                direction: direction.inverse(),
-                                look_direction: previous_look_direction,
-                            })
-                        } else {
-                            // Can't move, something is on the way after the crate
-                            Err(())
-                        }
-                    } else {
-                        // Can move and no obstacle is on the way
-                        level.player.set_transform(cell_to_move_to, look_direction);
-                        Ok(Action::Push {
-                            direction: direction.inverse(),
-                            look_direction: previous_look_direction,
-                        })
-                    }
-                } else {
-                    // Can't move, something is on the way
-                    Err(())
-                }
-            }
-            Action::Pull {
-                direction,
-                look_direction,
-            } => {
-                let previous_look_direction = level.player.direction();
-                let movement: Vector2i = direction.into();
-
-                let cell_to_pull_from = level.player.position() - movement;
-                let cell_to_move_to = level.player.position() + movement;
-
-                if level.is_cell_walkable(cell_to_move_to) {
-                    let crate_to_move_idx = level
-                        .crates
-                        .iter()
-                        .enumerate()
-                        .find(|(_idx, c)| c.position() == cell_to_pull_from)
-                        .and_then(|(idx, _ref)| Some(idx));
-
-                    if let Some(crate_to_move_idx) = crate_to_move_idx {
-                        // Can move and we are pulling a crate with ourselves
-                        let crate_target_position = level.player.position();
-
-                        let is_crate_movable = !level.is_cell_obstructed(crate_target_position);
-
-                        if is_crate_movable {
-                            level.player.set_transform(cell_to_move_to, look_direction);
-                            level.crates[crate_to_move_idx].set_position(crate_target_position);
-
-                            let target_tile = level.tilemap.get_tile(crate_target_position);
-                            if target_tile == Some(LevelTile::Hole) {
-                                let is_hole_full = level
-                                    .crates
-                                    .iter()
-                                    .any(|c| c.position() == crate_target_position && c.in_hole());
-
-                                level.crates[crate_to_move_idx].set_in_hole(!is_hole_full);
-                            }
-
-                            Ok(Action::Push {
-                                direction: direction.inverse(),
-                                look_direction: previous_look_direction,
-                            })
-                        } else {
-                            // Can't move, something is on the way on the crate target (Should never
-                            // happen because the player is there, but checking anyways if we do
-                            // more complex mechanics)
-                            Err(())
-                        }
-                    } else {
-                        // Can move and no obstacle is on the way
-                        level.player.set_transform(cell_to_move_to, look_direction);
-                        Ok(Action::Push {
-                            direction: direction.inverse(),
-                            look_direction: previous_look_direction,
-                        })
-                    }
-                } else {
-                    // Can't move, something is on the way
-                    Err(())
-                }
-            }
         }
     }
 }
@@ -423,7 +276,7 @@ impl Level<'_> {
     }
 
     /// Updates the level and the objects within it. Call every frame.
-    pub fn update(&mut self, context: Context, _delta: std::time::Duration) {
+    pub fn update(&mut self, _context: Context, _delta: std::time::Duration) {
         self.update_crate_opacity();
     }
 
@@ -464,8 +317,7 @@ impl Level<'_> {
                 .iter_mut()
                 .filter(|c| c.position() == g.position())
                 .nth(0)
-                .map(|c| (g, c))
-                .map(|(g, c)| {
+                .map(|c| {
                     g.set_done(true);
                     c.set_is_positioned(true);
                 });
