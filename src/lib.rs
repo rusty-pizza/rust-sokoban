@@ -4,7 +4,7 @@ use level::Level;
 use sfml::{
     graphics::{BlendMode, RenderStates, RenderTarget, RenderWindow, Transform},
     system::{Vector2f, Vector2u},
-    window::{ContextSettings, Event, Style},
+    window::{ContextSettings, Event, Key, Style},
 };
 use sound_manager::SoundManager;
 
@@ -31,6 +31,9 @@ pub fn run() -> anyhow::Result<()> {
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return Ok(()),
+                Event::KeyPressed { code: Key::R, .. } => {
+                    level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?
+                }
                 _ => level.handle_event(
                     Context {
                         assets: &assets,
