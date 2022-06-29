@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.5" tiledversion="1.7.2" name="sokoban_tilesheet@2" tilewidth="128" tileheight="128" tilecount="104" columns="13" objectalignment="topleft">
+<tileset version="1.8" tiledversion="1.8.5" name="Sokoban" tilewidth="128" tileheight="128" spacing="20" tilecount="126" columns="13" objectalignment="topleft">
  <properties>
   <property name="player_down" type="int" value="52"/>
   <property name="player_left" type="int" value="78"/>
   <property name="player_right" type="int" value="81"/>
   <property name="player_up" type="int" value="55"/>
  </properties>
- <image source="../sprites/Tilesheet/sokoban_tilesheet@2.png" width="1664" height="1024"/>
+ <image source="../sprites/Tilesheet/sokoban.png" width="1904" height="1164"/>
  <tile id="6" type="crate">
   <properties>
    <property name="style" type="int" value="1"/>

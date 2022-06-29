@@ -163,6 +163,7 @@ impl<'s> Level<'s> {
         tilesheet: &Tilesheet,
     ) -> Vec<Vertex> {
         const FLOOR_OFFSET: Vector2f = Vector2f::new(0.5f32, 0.5f32);
+        const TILE_DILATION: f32 = 0.01;
 
         let mut vertices = Vec::new();
 
@@ -174,8 +175,8 @@ impl<'s> Level<'s> {
             );
             if f_tile.gid != Gid::EMPTY {
                 vertices.add_quad(
-                    position + FLOOR_OFFSET,
-                    1f32,
+                    position + FLOOR_OFFSET - TILE_DILATION,
+                    1f32 + TILE_DILATION * 2.,
                     tilesheet
                         .tile_uv(f_tile.gid)
                         .expect("obtaining floor tile UV"),
@@ -183,8 +184,8 @@ impl<'s> Level<'s> {
             }
             if b_tile.gid != Gid::EMPTY {
                 vertices.add_quad(
-                    position,
-                    1f32,
+                    position - TILE_DILATION,
+                    1f32 + TILE_DILATION * 2.,
                     tilesheet
                         .tile_uv(b_tile.gid)
                         .expect("obtaining building tile UV"),
