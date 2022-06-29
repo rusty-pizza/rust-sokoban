@@ -9,10 +9,11 @@ use tiled::map::Map;
 
 use crate::graphics::Tilesheet;
 
-pub const LEVEL_PATHS: [&'static str; 4] = [
+pub const LEVEL_PATHS: [&'static str; 5] = [
     "assets/levels/tutorial/movement.tmx",
     "assets/levels/tutorial/bricks.tmx",
     "assets/levels/tutorial/manouvering.tmx",
+    "assets/levels/basic/plus.tmx",
     "assets/levels/untitled.tmx",
 ];
 pub const SOUND_DIR: &'static str = "assets/sound";
