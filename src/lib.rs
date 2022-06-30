@@ -46,6 +46,16 @@ pub fn run() -> anyhow::Result<()> {
                             Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
                     }
                 }
+                Event::KeyPressed {
+                    code, ctrl: true, ..
+                } if code as usize >= Key::Num1 as usize && code as usize <= Key::Num9 as usize => {
+                    let level_to_switch_to = code as usize - Key::Num1 as usize;
+                    if level_to_switch_to < assets.maps.len() {
+                        current_level_idx = level_to_switch_to;
+                        level =
+                            Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
+                    }
+                }
                 Event::KeyPressed { code: Key::R, .. } => {
                     level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?
                 }
