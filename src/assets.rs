@@ -4,7 +4,7 @@
 
 use std::path::Path;
 
-use sfml::{audio::SoundBuffer, SfBox};
+use sfml::{audio::SoundBuffer, graphics::Font, SfBox};
 use tiled::map::Map;
 
 use crate::graphics::Tilesheet;
@@ -18,12 +18,14 @@ pub const LEVEL_PATHS: [&'static str; 5] = [
 ];
 pub const MOVE_SOUND_DIR: &'static str = "assets/sound/move";
 pub const UNDO_SOUND_DIR: &'static str = "assets/sound/undo";
+pub const WIN_FONT_PATH: &'static str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
 
 pub struct AssetManager {
     pub maps: Vec<Map>,
     pub walk_sounds: Vec<SfBox<SoundBuffer>>,
     pub undo_sounds: Vec<SfBox<SoundBuffer>>,
     pub tilesheet: Tilesheet,
+    pub win_font: SfBox<Font>,
 }
 
 impl AssetManager {
@@ -60,6 +62,7 @@ impl AssetManager {
                         .expect("could not read sound file")
                 })
                 .collect(),
+            win_font: Font::from_file(WIN_FONT_PATH).expect("could not load win font"),
         })
     }
 }

@@ -2,7 +2,9 @@ use assets::AssetManager;
 use context::Context;
 use level::Level;
 use sfml::{
-    graphics::{BlendMode, RenderStates, RenderTarget, RenderWindow, Transform},
+    graphics::{
+        BlendMode, RenderStates, RenderTarget, RenderWindow, Text, Transform, Transformable,
+    },
     system::{Vector2f, Vector2u},
     window::{ContextSettings, Event, Key, Style},
 };
@@ -27,10 +29,23 @@ pub fn run() -> anyhow::Result<()> {
     let mut last_frame_time = std::time::Instant::now();
 
     loop {
+        let is_level_won = level.is_won();
         // Process events
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return Ok(()),
+                Event::KeyPressed { .. } if is_level_won => {
+                    // Go to next level
+                    current_level_idx += 1;
+
+                    if current_level_idx >= assets::LEVEL_PATHS.len() {
+                        println!("You won!");
+                        return Ok(());
+                    } else {
+                        level =
+                            Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
+                    }
+                }
                 Event::KeyPressed { code: Key::R, .. } => {
                     level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?
                 }
@@ -55,16 +70,6 @@ pub fn run() -> anyhow::Result<()> {
             },
             delta_time,
         );
-        if level.is_won() {
-            current_level_idx += 1;
-
-            if current_level_idx >= assets::LEVEL_PATHS.len() {
-                println!("You won!");
-                return Ok(());
-            } else {
-                level = Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?;
-            }
-        }
         sound.update();
 
         // Render frame
@@ -73,6 +78,22 @@ pub fn run() -> anyhow::Result<()> {
 
         window.clear(level.background_color);
         window.draw_with_renderstates(&level, &render_states);
+
+        if is_level_won {
+            let mut text = Text::new("Level complete!", &assets.win_font, 60);
+            text.set_position(Vector2f::new(
+                window.size().x as f32 / 2. - text.global_bounds().width / 2.,
+                10.,
+            ));
+            window.draw_with_renderstates(&text, &RenderStates::DEFAULT);
+            let mut subtext = Text::new("Press any key to continue", &assets.win_font, 30);
+            subtext.set_position(Vector2f::new(
+                window.size().x as f32 / 2. - subtext.global_bounds().width / 2.,
+                10. + text.global_bounds().height + 20.,
+            ));
+            window.draw_with_renderstates(&subtext, &RenderStates::DEFAULT);
+        }
+
         window.display();
 
         last_frame_time = this_frame_time;
