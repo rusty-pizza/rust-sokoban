@@ -116,14 +116,17 @@ impl Action {
                             level.crates[crate_to_move_idx].set_position(crate_target_position);
 
                             let target_tile = level.tilemap.get_tile(crate_target_position);
-                            if target_tile == Some(LevelTile::Hole) {
+                            let is_in_hole = if target_tile == Some(LevelTile::Hole) {
                                 let is_hole_full = level
                                     .crates
                                     .iter()
                                     .any(|c| c.position() == crate_target_position && c.in_hole());
 
-                                level.crates[crate_to_move_idx].set_in_hole(!is_hole_full);
-                            }
+                                !is_hole_full
+                            } else {
+                                false
+                            };
+                            level.crates[crate_to_move_idx].set_in_hole(is_in_hole);
 
                             Ok(Action::Push {
                                 direction: direction.inverse(),
