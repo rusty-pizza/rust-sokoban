@@ -9,6 +9,7 @@ use crate::graphics::{SpriteAtlas, Tilesheet};
 use super::Direction;
 
 /// Represents the player inside of a level.
+#[derive(Clone)]
 pub struct Player<'s> {
     position: Vector2i,
     atlas: SpriteAtlas<'s>,
