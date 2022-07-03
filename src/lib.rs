@@ -148,63 +148,42 @@ pub fn run() -> anyhow::Result<()> {
             } => {
                 let is_fading_out = *time_left > TRANSITION_TIME / 2;
 
-                // TODO: Refactor
-                if is_fading_out {
-                    // Render frame
-                    let camera_transform =
-                        camera_transform(window.size(), prev_level.tilemap().size());
-                    let render_states =
-                        RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
-
-                    // TODO: Cache shape
-                    let mut shape = RectangleShape::with_size(Vector2f::new(
-                        prev_level.tilemap().size().x as f32 + 10.,
-                        prev_level.tilemap().size().y as f32 + 10.,
-                    ));
-                    shape.set_position(Vector2f::new(-5., -5.));
-
-                    // TODO: Transition between both background colors
-                    let mut color = prev_level.background_color;
-                    *color.alpha_mut() = (255.
-                        - ((time_left.as_secs_f32() / (TRANSITION_TIME.as_secs_f32() / 2.)) - 1.)
-                            * 255.) as u8;
-                    shape.set_fill_color(color);
-
-                    window.clear(prev_level.background_color);
-
-                    window.draw_with_renderstates(prev_level, &render_states);
-                    window.draw_with_renderstates(&shape, &render_states);
-                } else {
-                    // Render frame
-                    let camera_transform =
-                        camera_transform(window.size(), next_level.tilemap().size());
-                    let render_states =
-                        RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
-
-                    // TODO: Cache shape
-                    let mut shape = RectangleShape::with_size(Vector2f::new(
-                        next_level.tilemap().size().x as f32 + 10.,
-                        next_level.tilemap().size().y as f32 + 10.,
-                    ));
-                    shape.set_position(Vector2f::new(-5., -5.));
-
-                    let mut color = prev_level.background_color;
-                    *color.alpha_mut() = ((time_left.as_secs_f32()
-                        / (TRANSITION_TIME.as_secs_f32() / 2.))
+                let mut transition_color = prev_level.background_color;
+                *transition_color.alpha_mut() = (255.
+                    - ((time_left.as_secs_f32() / (TRANSITION_TIME.as_secs_f32() / 2.)) - 1.).abs()
                         * 255.) as u8;
-                    shape.set_fill_color(color);
+                let current_level = if is_fading_out {
+                    prev_level
+                } else {
+                    next_level
+                };
 
-                    window.clear(next_level.background_color);
+                // Render frame
+                let camera_transform =
+                    camera_transform(window.size(), current_level.tilemap().size());
+                let render_states =
+                    RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
-                    window.draw_with_renderstates(next_level, &render_states);
-                    window.draw_with_renderstates(&shape, &render_states);
-                }
+                // TODO: Cache shape
+                let mut transition_overlay = RectangleShape::with_size(Vector2f::new(
+                    current_level.tilemap().size().x as f32 + 10.,
+                    current_level.tilemap().size().y as f32 + 10.,
+                ));
+                transition_overlay.set_position(Vector2f::new(-5., -5.));
+
+                // TODO: Transition between both background colors
+                transition_overlay.set_fill_color(transition_color);
+
+                window.clear(current_level.background_color);
+
+                window.draw_with_renderstates(current_level, &render_states);
+                window.draw_with_renderstates(&transition_overlay, &render_states);
 
                 *time_left = time_left.saturating_sub(delta_time);
 
                 if time_left.is_zero() {
                     state = PlayState::Playing {
-                        level: next_level.clone(),
+                        level: current_level.clone(),
                     };
                 }
 
