@@ -250,16 +250,25 @@ impl Level<'_> {
 
     pub fn handle_event(&mut self, context: Context, event: Event) {
         match event {
-            Event::KeyPressed { code: Key::A, .. } => {
+            Event::KeyPressed { code: Key::A, .. }
+            | Event::KeyPressed {
+                code: Key::Left, ..
+            } => {
                 self.move_player(Direction::West, context);
             }
-            Event::KeyPressed { code: Key::W, .. } => {
+            Event::KeyPressed { code: Key::W, .. } | Event::KeyPressed { code: Key::Up, .. } => {
                 self.move_player(Direction::North, context);
             }
-            Event::KeyPressed { code: Key::S, .. } => {
+            Event::KeyPressed { code: Key::S, .. }
+            | Event::KeyPressed {
+                code: Key::Down, ..
+            } => {
                 self.move_player(Direction::South, context);
             }
-            Event::KeyPressed { code: Key::D, .. } => {
+            Event::KeyPressed { code: Key::D, .. }
+            | Event::KeyPressed {
+                code: Key::Right, ..
+            } => {
                 self.move_player(Direction::East, context);
             }
             Event::KeyPressed { code: Key::Q, .. } => {
