@@ -12,23 +12,14 @@ use sfml::{
     window::{ContextSettings, Event, Key, Style},
 };
 use sound_manager::SoundManager;
+use state::PlayState;
 
 pub mod assets;
 pub mod context;
 pub mod graphics;
 pub mod level;
 pub mod sound_manager;
-
-enum PlayState<'s> {
-    Playing {
-        level: Level<'s>,
-    },
-    Transitioning {
-        prev_level: Level<'s>,
-        next_level: Level<'s>,
-        time_left: Duration,
-    },
-}
+pub mod state;
 
 /// Run the game, returning on failure.
 /// Will load and display the [`Level`] at [`LEVEL_PATH`].
@@ -89,6 +80,7 @@ pub fn run() -> anyhow::Result<()> {
                     window.draw_with_renderstates(&subtext, &RenderStates::DEFAULT);
                 }
 
+                let mut next_state: Option<PlayState> = None;
                 // Process events
                 while let Some(event) = window.poll_event() {
                     match event {
@@ -101,15 +93,14 @@ pub fn run() -> anyhow::Result<()> {
                                 println!("You won!");
                                 return Ok(());
                             } else {
-                                state = PlayState::Transitioning {
+                                next_state = Some(PlayState::Transitioning {
                                     prev_level: level.clone(),
                                     next_level: Level::from_map(
                                         &assets.maps[current_level_idx],
                                         &assets.tilesheet,
                                     )?,
                                     time_left: TRANSITION_TIME,
-                                };
-                                break;
+                                });
                             }
                         }
                         Event::KeyPressed {
@@ -138,6 +129,10 @@ pub fn run() -> anyhow::Result<()> {
                             event,
                         ),
                     }
+                }
+
+                if let Some(next_state) = next_state {
+                    state = next_state;
                 }
             }
 
@@ -179,20 +174,21 @@ pub fn run() -> anyhow::Result<()> {
                 window.draw_with_renderstates(current_level, &render_states);
                 window.draw_with_renderstates(&transition_overlay, &render_states);
 
-                *time_left = time_left.saturating_sub(delta_time);
-
-                if time_left.is_zero() {
-                    state = PlayState::Playing {
-                        level: current_level.clone(),
-                    };
-                }
-
                 // Process events
                 while let Some(event) = window.poll_event() {
                     match event {
                         Event::Closed => return Ok(()),
                         _ => (),
                     }
+                }
+
+                // Update time left on transition
+                *time_left = time_left.saturating_sub(delta_time);
+
+                if time_left.is_zero() {
+                    state = PlayState::Playing {
+                        level: current_level.clone(),
+                    };
                 }
             }
         }
