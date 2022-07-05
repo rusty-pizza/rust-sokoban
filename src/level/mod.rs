@@ -315,7 +315,7 @@ impl Level<'_> {
         self.goals.iter_mut().for_each(|g| {
             self.crates
                 .iter_mut()
-                .filter(|c| c.position() == g.position())
+                .filter(|c| c.position() == g.position() && !c.in_hole())
                 .nth(0)
                 .map(|c| {
                     g.set_done(true);
