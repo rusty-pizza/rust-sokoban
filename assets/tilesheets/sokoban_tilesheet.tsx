@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.8" tiledversion="1.8.5" name="Sokoban" tilewidth="128" tileheight="128" spacing="20" tilecount="126" columns="13" objectalignment="topleft">
+<tileset version="1.8" tiledversion="1.8.5" name="Sokoban" tilewidth="128" tileheight="128" spacing="20" tilecount="104" columns="13" objectalignment="topleft">
  <properties>
   <property name="player_down" type="int" value="52"/>
   <property name="player_left" type="int" value="78"/>
@@ -13,7 +13,7 @@
   </properties>
   <animation>
    <frame tileid="6" duration="1000"/>
-   <frame tileid="45" duration="1000"/>
+   <frame tileid="58" duration="500"/>
    <frame tileid="19" duration="1000"/>
   </animation>
  </tile>
