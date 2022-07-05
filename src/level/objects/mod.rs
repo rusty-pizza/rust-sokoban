@@ -29,6 +29,7 @@ impl CrateStyle {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum AcceptedCrateStyle {
     Specific(CrateStyle),
     Any,
@@ -49,6 +50,7 @@ impl Default for AcceptedCrateStyle {
 }
 
 /// A crate the player can move around.
+#[derive(Clone)]
 pub struct Crate<'s> {
     position: Vector2i,
     sprite_atlas: SpriteAtlas<'s>,
@@ -158,6 +160,7 @@ impl<'s> Drawable for Crate<'s> {
 }
 
 /// Indicates where a certain style of crate should be put in a level.
+#[derive(Clone)]
 pub struct Goal<'s> {
     position: Vector2i,
     accepted_style: AcceptedCrateStyle,

@@ -10,6 +10,7 @@ pub enum LevelTile {
 }
 
 /// A bidimensional array of level tiles.
+#[derive(Clone)]
 pub struct Tilemap {
     size: Vector2u,
     tiles: Vec<LevelTile>,

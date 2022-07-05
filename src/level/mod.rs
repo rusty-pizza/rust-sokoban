@@ -92,6 +92,7 @@ fn play_undo_sound(context: Context) {
     context.sound.add_sound(sound);
 }
 /// Represents a sokoban level or puzzle.
+#[derive(Clone)]
 pub struct Level<'s> {
     player_spawn: Vector2i,
     crates: Vec<Crate<'s>>,

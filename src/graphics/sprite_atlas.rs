@@ -7,7 +7,7 @@ use sfml::{
 
 /// A sprite access point for textures that have more than a single sprite.
 /// Each sprite is identified as a "frame" of the atlas.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SpriteAtlas<'t> {
     frames: Vec<IntRect>,
     current_frame: usize,
