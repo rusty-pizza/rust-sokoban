@@ -2,33 +2,30 @@
 
 #![allow(dead_code)]
 
-use std::path::Path;
+use std::{fs::File, path::Path};
 
-use sfml::{audio::SoundBuffer, graphics::Font, SfBox};
+use serde::Deserialize;
+use sfml::{
+    audio::SoundBuffer,
+    graphics::{Color, Font},
+    SfBox,
+};
 use tiled::map::Map;
 
 use crate::graphics::Tilesheet;
 
-pub const LEVEL_PATHS: [&'static str; 12] = [
-    "assets/levels/tutorial/movement.tmx",
-    "assets/levels/tutorial/bricks.tmx",
-    "assets/levels/tutorial/manouvering.tmx",
-    "assets/levels/tutorial/manouvering2.tmx",
-    "assets/levels/basic/room.tmx",
-    "assets/levels/basic/plus.tmx",
-    "assets/levels/holes/tutorial.tmx",
-    "assets/levels/holes/tutorial2.tmx",
-    "assets/levels/holes/pit.tmx",
-    "assets/levels/holes/cliff.tmx",
-    "assets/levels/holes/roundabout.tmx",
-    "assets/levels/holes/alt_route.tmx",
-];
 pub const MOVE_SOUND_DIR: &'static str = "assets/sound/move";
 pub const UNDO_SOUND_DIR: &'static str = "assets/sound/undo";
 pub const WIN_FONT_PATH: &'static str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
 
-pub struct AssetManager {
+pub struct LevelCategory {
+    pub name: String,
+    pub color: Color,
     pub maps: Vec<Map>,
+}
+
+pub struct AssetManager {
+    pub level_categories: Vec<LevelCategory>,
     pub walk_sounds: Vec<SfBox<SoundBuffer>>,
     pub undo_sounds: Vec<SfBox<SoundBuffer>>,
     pub tilesheet: Tilesheet,
@@ -38,13 +35,43 @@ pub struct AssetManager {
 impl AssetManager {
     /// Creates a new asset manager and loads the data it references.
     pub fn load() -> anyhow::Result<Self> {
+        #[derive(Deserialize)]
+        pub struct RonLevelCategory {
+            pub name: String,
+            pub color: u32,
+            pub maps: Vec<String>,
+        }
+
+        impl TryFrom<RonLevelCategory> for LevelCategory {
+            type Error = anyhow::Error;
+
+            fn try_from(value: RonLevelCategory) -> Result<Self, Self::Error> {
+                Ok(LevelCategory {
+                    name: value.name,
+                    color: Color::from(value.color),
+                    maps: value
+                        .maps
+                        .iter()
+                        .map(|path| {
+                            Map::parse_file(&Path::new("assets/levels/").join(&Path::new(path)))
+                        })
+                        .collect::<Result<Vec<_>, _>>()?,
+                })
+            }
+        }
+
+        let level_categories: Vec<RonLevelCategory> =
+            ron::de::from_reader(File::open("assets/levels/levels.ron")?)?;
+
+        let level_categories = level_categories
+            .into_iter()
+            .map(|lvl| lvl.try_into())
+            .collect::<Result<Vec<LevelCategory>, _>>()?;
+
         let map = Map::parse_file(Path::new("assets/levels/test.tmx"))?;
         Ok(Self {
             tilesheet: Tilesheet::from_tileset(map.tilesets[0].clone())?,
-            maps: LEVEL_PATHS
-                .iter()
-                .map(|path| Map::parse_file(Path::new(path)))
-                .collect::<Result<Vec<_>, _>>()?,
+            level_categories,
             walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))
                 .expect("could not inspect the sounds directory")
                 .map(|entry| {

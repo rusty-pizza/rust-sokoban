@@ -10,6 +10,8 @@ tiled = { git = "https://github.com/rusty-pizza/rs-tiled" }
 anyhow = "1.0"
 thiserror = "1.0"
 rand = "0.8.5"
+ron = "0.7.1"
+serde = "1"
 
 [dependencies.sfml]
 git = "https://github.com/jeremyletang/rust-sfml"

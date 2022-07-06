@@ -1,0 +1,30 @@
+[
+    (
+        name: "Basic",
+        color: 0xc5afa0,
+        maps: [
+            "tutorial/movement.tmx",
+            "tutorial/bricks.tmx",
+            "tutorial/manouvering.tmx",
+            "tutorial/manouvering2.tmx",
+            "basic/room.tmx",
+            "basic/plus.tmx",
+        ]
+    ),
+    (
+        name: "Holes",
+        color: 0x8d6b94,
+        maps: [
+            "holes/tutorial.tmx",
+            "holes/tutorial2.tmx",
+            "holes/pit.tmx",
+            "holes/cliff.tmx",
+            "holes/roundabout.tmx",
+            "holes/alt_route.tmx",
+        ]
+    )
+    // Other colors:
+    // 0x4ecdc4 for levels that introduce a exotic new rule
+    // 0xad2831 for hard levels
+    // 0x292f36 for hidden/extra hard levels
+]

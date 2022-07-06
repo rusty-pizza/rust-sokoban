@@ -26,9 +26,10 @@ pub mod state;
 pub fn run() -> anyhow::Result<()> {
     // Initialize
     let assets = AssetManager::load()?;
+    let mut current_category_idx = 0;
     let mut current_level_idx = 0;
     let mut state = PlayState::Playing {
-        level: Level::from_map(&assets.maps[0], &assets.tilesheet)?,
+        level: Level::from_map(&assets.level_categories[0].maps[0], &assets.tilesheet)?,
     };
     let mut window = create_window();
     let mut sound = SoundManager::new();
@@ -89,14 +90,22 @@ pub fn run() -> anyhow::Result<()> {
                             // Go to next level
                             current_level_idx += 1;
 
-                            if current_level_idx >= assets::LEVEL_PATHS.len() {
+                            if current_level_idx
+                                >= assets.level_categories[current_category_idx].maps.len()
+                            {
+                                current_level_idx = 0;
+                                current_category_idx += 1;
+                            }
+
+                            if current_category_idx >= assets.level_categories.len() {
                                 println!("You won!");
                                 return Ok(());
                             } else {
                                 next_state = Some(PlayState::Transitioning {
                                     prev_level: level.clone(),
                                     next_level: Level::from_map(
-                                        &assets.maps[current_level_idx],
+                                        &assets.level_categories[current_category_idx].maps
+                                            [current_level_idx],
                                         &assets.tilesheet,
                                     )?,
                                     time_left: TRANSITION_TIME,
@@ -104,22 +113,50 @@ pub fn run() -> anyhow::Result<()> {
                             }
                         }
                         Event::KeyPressed {
-                            code, ctrl: true, ..
+                            code,
+                            ctrl: true,
+                            shift: true,
+                            ..
                         } if code as usize >= Key::Num1 as usize
                             && code as usize <= Key::Num9 as usize =>
                         {
-                            let level_to_switch_to = code as usize - Key::Num1 as usize;
-                            if level_to_switch_to < assets.maps.len() {
-                                current_level_idx = level_to_switch_to;
+                            let category_to_switch_to = code as usize - Key::Num1 as usize;
+                            if category_to_switch_to < assets.level_categories.len() {
+                                current_category_idx = category_to_switch_to;
+                                current_level_idx = 0;
                                 *level = Level::from_map(
-                                    &assets.maps[current_level_idx],
+                                    &assets.level_categories[current_category_idx].maps
+                                        [current_level_idx],
+                                    &assets.tilesheet,
+                                )?;
+                            }
+                        }
+                        Event::KeyPressed {
+                            code,
+                            ctrl: true,
+                            shift: false,
+                            ..
+                        } if code as usize >= Key::Num1 as usize
+                            && code as usize <= Key::Num9 as usize =>
+                        {
+                            let map_to_switch_to = code as usize - Key::Num1 as usize;
+                            if map_to_switch_to
+                                < assets.level_categories[current_category_idx].maps.len()
+                            {
+                                current_level_idx = map_to_switch_to;
+                                *level = Level::from_map(
+                                    &assets.level_categories[current_category_idx].maps
+                                        [current_level_idx],
                                     &assets.tilesheet,
                                 )?;
                             }
                         }
                         Event::KeyPressed { code: Key::R, .. } => {
-                            *level =
-                                Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?
+                            *level = Level::from_map(
+                                &assets.level_categories[current_category_idx].maps
+                                    [current_level_idx],
+                                &assets.tilesheet,
+                            )?
                         }
                         Event::Resized { width, height } => {
                             let view = sfml::graphics::View::from_rect(&Rect {
