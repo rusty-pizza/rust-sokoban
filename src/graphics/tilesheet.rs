@@ -49,7 +49,7 @@ impl Tilesheet {
             .first()
             .ok_or(TilesheetLoadError::InvalidTextureCount)?;
 
-        let texture = {
+        let mut texture = {
             let origin_path = match &tileset.source {
                 Some(path) => path
                     .parent()
@@ -64,6 +64,8 @@ impl Tilesheet {
             Texture::from_file(texture_path.to_str().expect("obtaining valid UTF-8 path"))
                 .or(Err(TilesheetLoadError::InvalidTexturePath(texture_path)))?
         };
+
+        texture.generate_mipmap();
 
         Ok(Tilesheet { texture, tileset })
     }

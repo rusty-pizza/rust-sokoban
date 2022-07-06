@@ -5,7 +5,7 @@ use context::Context;
 use level::Level;
 use sfml::{
     graphics::{
-        BlendMode, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape, Text,
+        BlendMode, Rect, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape, Text,
         Transform, Transformable,
     },
     system::{Vector2f, Vector2u},
@@ -121,6 +121,15 @@ pub fn run() -> anyhow::Result<()> {
                             *level =
                                 Level::from_map(&assets.maps[current_level_idx], &assets.tilesheet)?
                         }
+                        Event::Resized { width, height } => {
+                            let view = sfml::graphics::View::from_rect(&Rect {
+                                left: 0.,
+                                top: 0.,
+                                width: width as f32,
+                                height: height as f32,
+                            });
+                            window.set_view(&view);
+                        }
                         _ => level.handle_event(
                             Context {
                                 assets: &assets,
@@ -205,7 +214,12 @@ fn create_window() -> RenderWindow {
     // Create the window of the application
     let mut context_settings = ContextSettings::default();
     context_settings.antialiasing_level = AA_LEVEL;
-    let mut window = RenderWindow::new((1080, 720), "Sokoban!", Style::CLOSE, &context_settings);
+    let mut window = RenderWindow::new(
+        (1080, 720),
+        "Sokoban!",
+        Style::CLOSE | Style::RESIZE,
+        &context_settings,
+    );
     window.set_vertical_sync_enabled(true);
 
     window
