@@ -18,8 +18,6 @@ use tiled::{
     tile::Gid,
 };
 
-use crate::state::LevelArray;
-
 pub mod assets;
 pub mod context;
 pub mod graphics;
@@ -34,123 +32,12 @@ pub fn run() -> anyhow::Result<()> {
     let assets = AssetManager::load()?;
     let mut current_category_idx = 0;
     let mut current_level_idx = 0;
-    let mut state = PlayState::Playing {
-        level: Level::from_map(&assets.level_categories[0].maps[0], &assets.tilesheet)?,
-    };
     let mut window = create_window();
     let mut sound = SoundManager::new();
+    let mut state = PlayState::level_select(&assets, &window);
     let mut completed_levels: HashSet<PathBuf> = HashSet::new();
 
     let mut last_frame_time = std::time::Instant::now();
-
-    fn level_select<'s>(assets: &'s AssetManager, window: &RenderWindow) -> PlayState<'s> {
-        let ui_aspect_ratio = assets.main_menu.width as f32 / assets.main_menu.height as f32;
-        let target_aspect_ratio = window.size().x as f32 / window.size().y as f32;
-
-        // Get the size of the viewport we will be actually projecting stuff onto
-        let viewport_size = if ui_aspect_ratio > target_aspect_ratio {
-            Vector2f::new(
-                window.size().x as f32,
-                window.size().x as f32 / ui_aspect_ratio,
-            )
-        } else {
-            Vector2f::new(
-                window.size().y as f32 * ui_aspect_ratio,
-                window.size().y as f32,
-            )
-        };
-
-        let viewport_offset = Vector2f::new(
-            window.size().x as f32 - viewport_size.x,
-            window.size().y as f32 - viewport_size.y,
-        ) / 2.;
-
-        let map_scale =
-            viewport_size.x / (assets.main_menu.width * assets.main_menu.tile_width) as f32;
-
-        let mut texts = Vec::new();
-        let mut level_arrays = Vec::new();
-
-        for object in assets.main_menu.object_groups[0].objects.iter() {
-            if let ObjectShape::Text {
-                pixel_size,
-                halign,
-                valign,
-                color,
-                contents,
-                ..
-            } = &object.shape
-            {
-                let contents = if object.name == "level_metrics" {
-                    "metrics here".to_string()
-                } else {
-                    contents.clone()
-                };
-                let mut text = Text::new(
-                    &contents,
-                    &assets.win_font,
-                    (*pixel_size as f32 * map_scale) as u32,
-                );
-                let bounds = text.local_bounds();
-                text.set_position(Vector2f::new(object.x * map_scale, object.y * map_scale));
-                text.move_(Vector2f::new(
-                    match halign {
-                        tiled::objects::HorizontalAlignment::Left => -bounds.left,
-                        tiled::objects::HorizontalAlignment::Center => {
-                            object.width * map_scale / 2.
-                                - text.local_bounds().width / 2.
-                                - bounds.left
-                        }
-                        tiled::objects::HorizontalAlignment::Right => {
-                            object.width * map_scale - text.local_bounds().width - bounds.left
-                        }
-                        tiled::objects::HorizontalAlignment::Justify => {
-                            unimplemented!("Justified texts are not implemented")
-                        }
-                    },
-                    match valign {
-                        tiled::objects::VerticalAlignment::Top => -bounds.top,
-                        tiled::objects::VerticalAlignment::Center => {
-                            object.height * map_scale / 2.
-                                - text.local_bounds().height / 2.
-                                - bounds.top
-                        }
-                        tiled::objects::VerticalAlignment::Bottom => {
-                            // FIXME: This is wrong! Bottom alignment should not depend on text bounds
-                            // and instead should rely on font baseline and other characteristics.
-                            // As SFML does not expose them, we are limited to this hack instead.
-                            object.height * map_scale - bounds.height - bounds.top
-                        }
-                    },
-                ));
-                text.move_(viewport_offset);
-                texts.push(text);
-            } else if object.name == "level_array" {
-                let rect = FloatRect::new(
-                    object.x * map_scale,
-                    object.y * map_scale,
-                    object.width * map_scale,
-                    object.height * map_scale,
-                );
-                let category = assets
-                    .level_categories
-                    .iter()
-                    .enumerate()
-                    .find(|(_, cat)| cat.name == object.obj_type)
-                    .expect("Unknown level category in level map")
-                    .0;
-                level_arrays.push(LevelArray { rect, category });
-            }
-        }
-
-        PlayState::LevelSelect {
-            texts,
-            level_arrays,
-            viewport_offset,
-        }
-    }
-
-    state = level_select(&assets, &window);
 
     loop {
         const TRANSITION_TIME: Duration = Duration::from_secs(1);
@@ -196,7 +83,7 @@ pub fn run() -> anyhow::Result<()> {
                                 height: height as f32,
                             });
                             window.set_view(&view);
-                            next_state = Some(level_select(&assets, &window))
+                            next_state = Some(PlayState::level_select(&assets, &window))
                         }
                         _ => (),
                     }
