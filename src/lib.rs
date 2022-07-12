@@ -31,8 +31,8 @@ pub fn run() -> anyhow::Result<()> {
     let mut current_level_idx = 0;
     let mut window = create_window();
     let mut sound = SoundManager::new();
-    let mut state = PlayState::level_select(&assets, &window);
-    let completed_levels: HashSet<PathBuf> = HashSet::new();
+    let mut state = PlayState::level_select(&assets, &window, 0);
+    let mut completed_levels: HashSet<PathBuf> = HashSet::new();
 
     let mut last_frame_time = std::time::Instant::now();
 
@@ -79,7 +79,30 @@ pub fn run() -> anyhow::Result<()> {
                                 height: height as f32,
                             });
                             window.set_view(&view);
-                            next_state = Some(PlayState::level_select(&assets, &window))
+                            next_state = Some(PlayState::level_select(
+                                &assets,
+                                &window,
+                                completed_levels.len(),
+                            ));
+                        }
+
+                        // Unlock all levels when Ctrl+I is pressed
+                        Event::KeyPressed {
+                            code: Key::I,
+                            ctrl: true,
+                            ..
+                        } => {
+                            for category in assets.level_categories.iter() {
+                                for level in category.maps.iter() {
+                                    completed_levels.insert(level.source.clone().unwrap());
+                                }
+                            }
+
+                            next_state = Some(PlayState::level_select(
+                                &assets,
+                                &window,
+                                completed_levels.len(),
+                            ));
                         }
                         _ => (),
                     }
@@ -191,6 +214,15 @@ pub fn run() -> anyhow::Result<()> {
                     match event {
                         Event::Closed => return Ok(()),
                         Event::KeyPressed { .. } if is_level_won => {
+                            // Mark this level as complete
+                            completed_levels.insert(
+                                assets.level_categories[current_category_idx].maps
+                                    [current_level_idx]
+                                    .source
+                                    .clone()
+                                    .unwrap(),
+                            );
+
                             // Go to next level
                             current_level_idx += 1;
 
@@ -217,43 +249,13 @@ pub fn run() -> anyhow::Result<()> {
                             }
                         }
                         Event::KeyPressed {
-                            code,
-                            ctrl: true,
-                            shift: true,
-                            ..
-                        } if code as usize >= Key::Num1 as usize
-                            && code as usize <= Key::Num9 as usize =>
-                        {
-                            let category_to_switch_to = code as usize - Key::Num1 as usize;
-                            if category_to_switch_to < assets.level_categories.len() {
-                                current_category_idx = category_to_switch_to;
-                                current_level_idx = 0;
-                                *level = Level::from_map(
-                                    &assets.level_categories[current_category_idx].maps
-                                        [current_level_idx],
-                                    &assets.tilesheet,
-                                )?;
-                            }
-                        }
-                        Event::KeyPressed {
-                            code,
-                            ctrl: true,
-                            shift: false,
-                            ..
-                        } if code as usize >= Key::Num1 as usize
-                            && code as usize <= Key::Num9 as usize =>
-                        {
-                            let map_to_switch_to = code as usize - Key::Num1 as usize;
-                            if map_to_switch_to
-                                < assets.level_categories[current_category_idx].maps.len()
-                            {
-                                current_level_idx = map_to_switch_to;
-                                *level = Level::from_map(
-                                    &assets.level_categories[current_category_idx].maps
-                                        [current_level_idx],
-                                    &assets.tilesheet,
-                                )?;
-                            }
+                            code: Key::Escape, ..
+                        } => {
+                            next_state = Some(PlayState::level_select(
+                                &assets,
+                                &window,
+                                completed_levels.len(),
+                            ));
                         }
                         Event::KeyPressed { code: Key::R, .. } => {
                             *level = Level::from_map(

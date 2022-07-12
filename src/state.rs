@@ -30,7 +30,11 @@ pub enum PlayState<'s> {
 }
 
 impl<'s> PlayState<'s> {
-    pub fn level_select(assets: &'s AssetManager, window: &RenderWindow) -> Self {
+    pub fn level_select(
+        assets: &'s AssetManager,
+        window: &RenderWindow,
+        completed_level_count: usize,
+    ) -> Self {
         let ui_aspect_ratio = assets.main_menu.width as f32 / assets.main_menu.height as f32;
         let target_aspect_ratio = window.size().x as f32 / window.size().y as f32;
         let window_size = window.size();
@@ -62,7 +66,7 @@ impl<'s> PlayState<'s> {
             } = &object.shape
             {
                 let contents = if object.name == "level_metrics" {
-                    "metrics here".to_string()
+                    format!("{}/{}", completed_level_count, assets.total_level_count())
                 } else {
                     contents.clone()
                 };
@@ -105,6 +109,7 @@ impl<'s> PlayState<'s> {
                     },
                 ));
                 text.move_(viewport_offset);
+
                 texts.push(text);
             } else if object.name == "level_array" {
                 let rect = FloatRect::new(

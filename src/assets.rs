@@ -34,6 +34,7 @@ pub struct AssetManager {
     pub undo_sounds: Vec<SfBox<SoundBuffer>>,
     pub tilesheet: Tilesheet,
     pub win_font: SfBox<Font>,
+    total_level_count: usize,
 }
 
 impl AssetManager {
@@ -77,6 +78,7 @@ impl AssetManager {
             tilesheet: Tilesheet::from_tileset(map.tilesets[0].clone())?,
             main_menu: Map::parse_file(Path::new(MAIN_MENU_PATH))?,
             icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(0))?,
+            total_level_count: level_categories.iter().flat_map(|c| c.maps.iter()).count(),
             level_categories,
             walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))
                 .expect("could not inspect the sounds directory")
@@ -104,5 +106,10 @@ impl AssetManager {
                 .collect(),
             win_font: Font::from_file(WIN_FONT_PATH).expect("could not load win font"),
         })
+    }
+
+    /// Get a reference to the asset manager's total level count.
+    pub fn total_level_count(&self) -> usize {
+        self.total_level_count
     }
 }
