@@ -125,7 +125,7 @@ pub fn run() -> anyhow::Result<()> {
                     ));
 
                     let mut completed_previous_level = true;
-                    for level in category.maps.iter() {
+                    for (level_idx, level) in category.maps.iter().enumerate() {
                         let completed_level =
                             completed_levels.contains(level.source.as_ref().unwrap());
                         let mut color;
@@ -139,6 +139,8 @@ pub fn run() -> anyhow::Result<()> {
                                     next_state = Some(PlayState::Playing {
                                         level: Level::from_map(level, &assets.tilesheet)?,
                                     });
+                                    current_category_idx = level_array.category;
+                                    current_level_idx = level_idx;
                                 }
 
                                 let amount_to_saturate =
