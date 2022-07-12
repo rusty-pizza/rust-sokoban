@@ -10,13 +10,15 @@ use sfml::{
     graphics::{Color, Font},
     SfBox,
 };
-use tiled::map::Map;
+use tiled::{map::Map, tile::Gid};
 
 use crate::graphics::Tilesheet;
 
 pub const MOVE_SOUND_DIR: &'static str = "assets/sound/move";
 pub const UNDO_SOUND_DIR: &'static str = "assets/sound/undo";
 pub const WIN_FONT_PATH: &'static str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
+pub const ICON_TILESHEET_PATH: &'static str = "assets/tilesheets/icons.tsx";
+pub const MAIN_MENU_PATH: &'static str = "assets/levels/main_menu.tmx";
 
 pub struct LevelCategory {
     pub name: String,
@@ -25,7 +27,9 @@ pub struct LevelCategory {
 }
 
 pub struct AssetManager {
+    pub main_menu: Map,
     pub level_categories: Vec<LevelCategory>,
+    pub icon_tilesheet: Tilesheet,
     pub walk_sounds: Vec<SfBox<SoundBuffer>>,
     pub undo_sounds: Vec<SfBox<SoundBuffer>>,
     pub tilesheet: Tilesheet,
@@ -71,6 +75,8 @@ impl AssetManager {
         let map = Map::parse_file(Path::new("assets/levels/test.tmx"))?;
         Ok(Self {
             tilesheet: Tilesheet::from_tileset(map.tilesets[0].clone())?,
+            main_menu: Map::parse_file(Path::new(MAIN_MENU_PATH))?,
+            icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(0))?,
             level_categories,
             walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))
                 .expect("could not inspect the sounds directory")

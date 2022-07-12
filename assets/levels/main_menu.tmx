@@ -1,36 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="100" tileheight="100" infinite="0" nextlayerid="3" nextobjectid="3">
+<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="100" tileheight="100" infinite="0" backgroundcolor="#1e1e1e" nextlayerid="3" nextobjectid="12">
  <tileset firstgid="1" source="../tilesheets/icons.tsx"/>
- <layer id="1" name="Tile Layer 1" width="30" height="20">
+ <layer id="1" name="Tile Layer 1" width="16" height="9">
   <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-92,92,92,92,92,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,92,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-92,92,92,92,92,92,92,0,92,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-92,92,92,92,92,92,92,92,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-92,92,92,92,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
  <objectgroup id="2" name="Object Layer 1">
-  <object id="1" x="0" y="0" width="501.385" height="100.333">
-   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" halign="center" valign="bottom">Hello World</text>
+  <object id="1" x="32" y="0" width="1173.38" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" valign="bottom">Basic</text>
   </object>
-  <object id="2" x="0" y="200" width="497.385" height="100.333">
-   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" halign="center" valign="bottom">Hello World</text>
+  <object id="8" x="1100" y="600" width="399.385" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" halign="center" valign="bottom">Total Levels</text>
   </object>
+  <object id="9" name="level_metrics" x="1100" y="700" width="399.385" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" halign="center" valign="bottom">0/0</text>
+  </object>
+  <object id="2" x="32" y="200" width="1153.38" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" valign="bottom">Holes</text>
+  </object>
+  <object id="3" name="level_array" type="Basic" x="0" y="100" width="1200" height="100"/>
+  <object id="4" name="level_array" type="Holes" x="0" y="300" width="1200" height="100"/>
  </objectgroup>
 </map>

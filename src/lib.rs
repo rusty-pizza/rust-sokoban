@@ -1,18 +1,24 @@
-use std::time::Duration;
+use std::{collections::HashSet, path::PathBuf, time::Duration};
 
 use assets::AssetManager;
 use context::Context;
 use level::Level;
 use sfml::{
     graphics::{
-        BlendMode, Rect, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape, Text,
-        Transform, Transformable,
+        BlendMode, Color, FloatRect, Rect, RectangleShape, RenderStates, RenderTarget,
+        RenderWindow, Shape, Text, Transform, Transformable,
     },
     system::{Vector2f, Vector2u},
-    window::{ContextSettings, Event, Key, Style},
+    window::{ContextSettings, Event, Key, Style, Window},
 };
 use sound_manager::SoundManager;
 use state::PlayState;
+use tiled::{
+    objects::{Object, ObjectShape},
+    tile::Gid,
+};
+
+use crate::state::LevelArray;
 
 pub mod assets;
 pub mod context;
@@ -33,8 +39,118 @@ pub fn run() -> anyhow::Result<()> {
     };
     let mut window = create_window();
     let mut sound = SoundManager::new();
+    let mut completed_levels: HashSet<PathBuf> = HashSet::new();
 
     let mut last_frame_time = std::time::Instant::now();
+
+    fn level_select<'s>(assets: &'s AssetManager, window: &RenderWindow) -> PlayState<'s> {
+        let ui_aspect_ratio = assets.main_menu.width as f32 / assets.main_menu.height as f32;
+        let target_aspect_ratio = window.size().x as f32 / window.size().y as f32;
+
+        // Get the size of the viewport we will be actually projecting stuff onto
+        let viewport_size = if ui_aspect_ratio > target_aspect_ratio {
+            Vector2f::new(
+                window.size().x as f32,
+                window.size().x as f32 / ui_aspect_ratio,
+            )
+        } else {
+            Vector2f::new(
+                window.size().y as f32 * ui_aspect_ratio,
+                window.size().y as f32,
+            )
+        };
+
+        let viewport_offset = Vector2f::new(
+            window.size().x as f32 - viewport_size.x,
+            window.size().y as f32 - viewport_size.y,
+        ) / 2.;
+
+        let map_scale =
+            viewport_size.x / (assets.main_menu.width * assets.main_menu.tile_width) as f32;
+
+        let mut texts = Vec::new();
+        let mut level_arrays = Vec::new();
+
+        for object in assets.main_menu.object_groups[0].objects.iter() {
+            if let ObjectShape::Text {
+                pixel_size,
+                halign,
+                valign,
+                color,
+                contents,
+                ..
+            } = &object.shape
+            {
+                let contents = if object.name == "level_metrics" {
+                    "metrics here".to_string()
+                } else {
+                    contents.clone()
+                };
+                let mut text = Text::new(
+                    &contents,
+                    &assets.win_font,
+                    (*pixel_size as f32 * map_scale) as u32,
+                );
+                let bounds = text.local_bounds();
+                text.set_position(Vector2f::new(object.x * map_scale, object.y * map_scale));
+                text.move_(Vector2f::new(
+                    match halign {
+                        tiled::objects::HorizontalAlignment::Left => -bounds.left,
+                        tiled::objects::HorizontalAlignment::Center => {
+                            object.width * map_scale / 2.
+                                - text.local_bounds().width / 2.
+                                - bounds.left
+                        }
+                        tiled::objects::HorizontalAlignment::Right => {
+                            object.width * map_scale - text.local_bounds().width - bounds.left
+                        }
+                        tiled::objects::HorizontalAlignment::Justify => {
+                            unimplemented!("Justified texts are not implemented")
+                        }
+                    },
+                    match valign {
+                        tiled::objects::VerticalAlignment::Top => -bounds.top,
+                        tiled::objects::VerticalAlignment::Center => {
+                            object.height * map_scale / 2.
+                                - text.local_bounds().height / 2.
+                                - bounds.top
+                        }
+                        tiled::objects::VerticalAlignment::Bottom => {
+                            // FIXME: This is wrong! Bottom alignment should not depend on text bounds
+                            // and instead should rely on font baseline and other characteristics.
+                            // As SFML does not expose them, we are limited to this hack instead.
+                            object.height * map_scale - bounds.height - bounds.top
+                        }
+                    },
+                ));
+                text.move_(viewport_offset);
+                texts.push(text);
+            } else if object.name == "level_array" {
+                let rect = FloatRect::new(
+                    object.x * map_scale,
+                    object.y * map_scale,
+                    object.width * map_scale,
+                    object.height * map_scale,
+                );
+                let category = assets
+                    .level_categories
+                    .iter()
+                    .enumerate()
+                    .find(|(_, cat)| cat.name == object.obj_type)
+                    .expect("Unknown level category in level map")
+                    .0;
+                level_arrays.push(LevelArray { rect, category });
+            }
+        }
+
+        PlayState::LevelSelect {
+            texts,
+            level_arrays,
+            viewport_offset,
+        }
+    }
+
+    state = level_select(&assets, &window);
 
     loop {
         const TRANSITION_TIME: Duration = Duration::from_secs(1);
@@ -45,6 +161,111 @@ pub fn run() -> anyhow::Result<()> {
         sound.update();
 
         match &mut state {
+            PlayState::LevelSelect {
+                texts,
+                level_arrays,
+                viewport_offset,
+            } => {
+                window.clear(
+                    assets
+                        .main_menu
+                        .background_color
+                        .map_or(Color::BLACK, |c| Color::rgb(c.red, c.green, c.blue)),
+                );
+
+                let mut clicked = false;
+                let mut next_state: Option<PlayState> = None;
+
+                // TODO: Handle resize event
+                // Process events
+                while let Some(event) = window.poll_event() {
+                    match event {
+                        Event::Closed => return Ok(()),
+                        Event::MouseButtonReleased {
+                            button: sfml::window::mouse::Button::Left,
+                            x,
+                            y,
+                        } => {
+                            clicked = true;
+                        }
+                        Event::Resized { width, height } => {
+                            let view = sfml::graphics::View::from_rect(&Rect {
+                                left: 0.,
+                                top: 0.,
+                                width: width as f32,
+                                height: height as f32,
+                            });
+                            window.set_view(&view);
+                            next_state = Some(level_select(&assets, &window))
+                        }
+                        _ => (),
+                    }
+                }
+
+                for text in texts {
+                    window.draw(text);
+                }
+
+                for level_array in level_arrays {
+                    let mut level_icon = assets.icon_tilesheet.tile_sprite(Gid(100)).unwrap();
+                    let category = &assets.level_categories[level_array.category];
+                    level_icon.set_position(
+                        Vector2f::new(level_array.rect.left, level_array.rect.top)
+                            + *viewport_offset,
+                    );
+                    level_icon.set_scale(Vector2f::new(
+                        level_array.rect.height / level_icon.global_bounds().height,
+                        level_array.rect.height / level_icon.global_bounds().height,
+                    ));
+
+                    let mut completed_previous_level = true;
+                    for level in category.maps.iter() {
+                        let completed_level =
+                            completed_levels.contains(level.source.as_ref().unwrap());
+                        let mut color;
+                        if completed_level || completed_previous_level {
+                            let mouse_pos = window.mouse_position();
+                            if level_icon
+                                .global_bounds()
+                                .contains(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32))
+                            {
+                                if clicked {
+                                    next_state = Some(PlayState::Playing {
+                                        level: Level::from_map(level, &assets.tilesheet)?,
+                                    });
+                                }
+
+                                let amount_to_saturate =
+                                    if sfml::window::mouse::Button::Left.is_pressed() {
+                                        60
+                                    } else {
+                                        30
+                                    };
+                                color = category.color;
+                                *color.red_mut() = color.red().saturating_add(amount_to_saturate);
+                                *color.green_mut() =
+                                    color.green().saturating_add(amount_to_saturate);
+                                *color.blue_mut() = color.blue().saturating_add(amount_to_saturate);
+                            } else {
+                                color = category.color;
+                            }
+                        } else {
+                            color = category.color;
+                            *color.alpha_mut() = 50;
+                        }
+                        level_icon.set_color(color);
+                        window.draw(&level_icon);
+
+                        level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
+
+                        completed_previous_level = completed_level;
+                    }
+                }
+
+                if let Some(next_state) = next_state {
+                    state = next_state;
+                }
+            }
             PlayState::Playing { level } => {
                 let is_level_won = level.is_won();
 
