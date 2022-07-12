@@ -5,18 +5,15 @@ use context::Context;
 use level::Level;
 use sfml::{
     graphics::{
-        BlendMode, Color, FloatRect, Rect, RectangleShape, RenderStates, RenderTarget,
-        RenderWindow, Shape, Text, Transform, Transformable,
+        BlendMode, Color, Rect, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape,
+        Text, Transform, Transformable,
     },
     system::{Vector2f, Vector2u},
-    window::{ContextSettings, Event, Key, Style, Window},
+    window::{ContextSettings, Event, Key, Style},
 };
 use sound_manager::SoundManager;
 use state::PlayState;
-use tiled::{
-    objects::{Object, ObjectShape},
-    tile::Gid,
-};
+use tiled::tile::Gid;
 
 pub mod assets;
 pub mod context;
@@ -35,7 +32,7 @@ pub fn run() -> anyhow::Result<()> {
     let mut window = create_window();
     let mut sound = SoundManager::new();
     let mut state = PlayState::level_select(&assets, &window);
-    let mut completed_levels: HashSet<PathBuf> = HashSet::new();
+    let completed_levels: HashSet<PathBuf> = HashSet::new();
 
     let mut last_frame_time = std::time::Instant::now();
 
@@ -70,8 +67,7 @@ pub fn run() -> anyhow::Result<()> {
                         Event::Closed => return Ok(()),
                         Event::MouseButtonReleased {
                             button: sfml::window::mouse::Button::Left,
-                            x,
-                            y,
+                            ..
                         } => {
                             clicked = true;
                         }

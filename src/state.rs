@@ -1,11 +1,8 @@
 use std::time::Duration;
 
 use sfml::{
-    graphics::{
-        Drawable, FloatRect, Rect, RenderTarget, RenderWindow, Sprite, Text, Transformable,
-    },
+    graphics::{Color, FloatRect, RenderTarget, RenderWindow, Text, Transformable},
     system::Vector2f,
-    SfBox,
 };
 use tiled::objects::ObjectShape;
 
@@ -74,6 +71,7 @@ impl<'s> PlayState<'s> {
                     &assets.win_font,
                     (*pixel_size as f32 * map_scale) as u32,
                 );
+                text.set_fill_color(Color::rgb(color.red, color.green, color.blue));
                 let bounds = text.local_bounds();
                 text.set_position(Vector2f::new(object.x * map_scale, object.y * map_scale));
                 text.move_(Vector2f::new(
