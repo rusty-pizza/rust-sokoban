@@ -65,6 +65,7 @@ impl Tilesheet {
                 .or(Err(TilesheetLoadError::InvalidTexturePath(texture_path)))?
         };
 
+        texture.set_smooth(true);
         texture.generate_mipmap();
 
         Ok(Tilesheet { texture, tileset })

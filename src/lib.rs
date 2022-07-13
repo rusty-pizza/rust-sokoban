@@ -1,18 +1,19 @@
-use std::time::Duration;
+use std::{collections::HashSet, path::PathBuf, time::Duration};
 
 use assets::AssetManager;
 use context::Context;
 use level::Level;
 use sfml::{
     graphics::{
-        BlendMode, Rect, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape, Text,
-        Transform, Transformable,
+        BlendMode, Color, Rect, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape,
+        Text, Transform, Transformable,
     },
     system::{Vector2f, Vector2u},
     window::{ContextSettings, Event, Key, Style},
 };
 use sound_manager::SoundManager;
 use state::PlayState;
+use tiled::tile::Gid;
 
 pub mod assets;
 pub mod context;
@@ -28,11 +29,10 @@ pub fn run() -> anyhow::Result<()> {
     let assets = AssetManager::load()?;
     let mut current_category_idx = 0;
     let mut current_level_idx = 0;
-    let mut state = PlayState::Playing {
-        level: Level::from_map(&assets.level_categories[0].maps[0], &assets.tilesheet)?,
-    };
     let mut window = create_window();
     let mut sound = SoundManager::new();
+    let mut state = PlayState::level_select(&assets, &window, 0);
+    let mut completed_levels: HashSet<PathBuf> = HashSet::new();
 
     let mut last_frame_time = std::time::Instant::now();
 
@@ -45,6 +45,135 @@ pub fn run() -> anyhow::Result<()> {
         sound.update();
 
         match &mut state {
+            PlayState::LevelSelect {
+                texts,
+                level_arrays,
+                viewport_offset,
+            } => {
+                window.clear(
+                    assets
+                        .main_menu
+                        .background_color
+                        .map_or(Color::BLACK, |c| Color::rgb(c.red, c.green, c.blue)),
+                );
+
+                let mut clicked = false;
+                let mut next_state: Option<PlayState> = None;
+
+                // TODO: Handle resize event
+                // Process events
+                while let Some(event) = window.poll_event() {
+                    match event {
+                        Event::Closed => return Ok(()),
+                        Event::MouseButtonReleased {
+                            button: sfml::window::mouse::Button::Left,
+                            ..
+                        } => {
+                            clicked = true;
+                        }
+                        Event::Resized { width, height } => {
+                            let view = sfml::graphics::View::from_rect(&Rect {
+                                left: 0.,
+                                top: 0.,
+                                width: width as f32,
+                                height: height as f32,
+                            });
+                            window.set_view(&view);
+                            next_state = Some(PlayState::level_select(
+                                &assets,
+                                &window,
+                                completed_levels.len(),
+                            ));
+                        }
+
+                        // Unlock all levels when Ctrl+I is pressed
+                        Event::KeyPressed {
+                            code: Key::I,
+                            ctrl: true,
+                            ..
+                        } => {
+                            for category in assets.level_categories.iter() {
+                                for level in category.maps.iter() {
+                                    completed_levels.insert(level.source.clone().unwrap());
+                                }
+                            }
+
+                            next_state = Some(PlayState::level_select(
+                                &assets,
+                                &window,
+                                completed_levels.len(),
+                            ));
+                        }
+                        _ => (),
+                    }
+                }
+
+                for text in texts {
+                    window.draw(text);
+                }
+
+                for level_array in level_arrays {
+                    let mut level_icon = assets.icon_tilesheet.tile_sprite(Gid(100)).unwrap();
+                    let category = &assets.level_categories[level_array.category];
+                    level_icon.set_position(
+                        Vector2f::new(level_array.rect.left, level_array.rect.top)
+                            + *viewport_offset,
+                    );
+                    level_icon.set_scale(Vector2f::new(
+                        level_array.rect.height / level_icon.global_bounds().height,
+                        level_array.rect.height / level_icon.global_bounds().height,
+                    ));
+
+                    let mut completed_previous_level = true;
+                    for (level_idx, level) in category.maps.iter().enumerate() {
+                        let completed_level =
+                            completed_levels.contains(level.source.as_ref().unwrap());
+                        let mut color;
+                        if completed_level || completed_previous_level {
+                            let mouse_pos = window.mouse_position();
+                            if level_icon
+                                .global_bounds()
+                                .contains(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32))
+                            {
+                                if clicked {
+                                    next_state = Some(PlayState::Playing {
+                                        level: Level::from_map(level, &assets.tilesheet)?,
+                                    });
+                                    current_category_idx = level_array.category;
+                                    current_level_idx = level_idx;
+                                }
+
+                                let amount_to_saturate =
+                                    if sfml::window::mouse::Button::Left.is_pressed() {
+                                        60
+                                    } else {
+                                        30
+                                    };
+                                color = category.color;
+                                *color.red_mut() = color.red().saturating_add(amount_to_saturate);
+                                *color.green_mut() =
+                                    color.green().saturating_add(amount_to_saturate);
+                                *color.blue_mut() = color.blue().saturating_add(amount_to_saturate);
+                            } else {
+                                color = category.color;
+                            }
+                        } else {
+                            color = category.color;
+                            *color.alpha_mut() = 50;
+                        }
+                        level_icon.set_color(color);
+                        window.draw(&level_icon);
+
+                        level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
+
+                        completed_previous_level = completed_level;
+                    }
+                }
+
+                if let Some(next_state) = next_state {
+                    state = next_state;
+                }
+            }
             PlayState::Playing { level } => {
                 let is_level_won = level.is_won();
 
@@ -87,6 +216,15 @@ pub fn run() -> anyhow::Result<()> {
                     match event {
                         Event::Closed => return Ok(()),
                         Event::KeyPressed { .. } if is_level_won => {
+                            // Mark this level as complete
+                            completed_levels.insert(
+                                assets.level_categories[current_category_idx].maps
+                                    [current_level_idx]
+                                    .source
+                                    .clone()
+                                    .unwrap(),
+                            );
+
                             // Go to next level
                             current_level_idx += 1;
 
@@ -113,43 +251,13 @@ pub fn run() -> anyhow::Result<()> {
                             }
                         }
                         Event::KeyPressed {
-                            code,
-                            ctrl: true,
-                            shift: true,
-                            ..
-                        } if code as usize >= Key::Num1 as usize
-                            && code as usize <= Key::Num9 as usize =>
-                        {
-                            let category_to_switch_to = code as usize - Key::Num1 as usize;
-                            if category_to_switch_to < assets.level_categories.len() {
-                                current_category_idx = category_to_switch_to;
-                                current_level_idx = 0;
-                                *level = Level::from_map(
-                                    &assets.level_categories[current_category_idx].maps
-                                        [current_level_idx],
-                                    &assets.tilesheet,
-                                )?;
-                            }
-                        }
-                        Event::KeyPressed {
-                            code,
-                            ctrl: true,
-                            shift: false,
-                            ..
-                        } if code as usize >= Key::Num1 as usize
-                            && code as usize <= Key::Num9 as usize =>
-                        {
-                            let map_to_switch_to = code as usize - Key::Num1 as usize;
-                            if map_to_switch_to
-                                < assets.level_categories[current_category_idx].maps.len()
-                            {
-                                current_level_idx = map_to_switch_to;
-                                *level = Level::from_map(
-                                    &assets.level_categories[current_category_idx].maps
-                                        [current_level_idx],
-                                    &assets.tilesheet,
-                                )?;
-                            }
+                            code: Key::Escape, ..
+                        } => {
+                            next_state = Some(PlayState::level_select(
+                                &assets,
+                                &window,
+                                completed_levels.len(),
+                            ));
                         }
                         Event::KeyPressed { code: Key::R, .. } => {
                             *level = Level::from_map(
