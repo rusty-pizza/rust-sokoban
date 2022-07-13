@@ -1,19 +1,14 @@
-use std::{collections::HashSet, ops::ControlFlow, path::PathBuf, time::Duration};
+use std::{collections::HashSet, ops::ControlFlow, path::PathBuf};
 
 use assets::AssetManager;
 use context::Context;
-use level::Level;
+
 use sfml::{
-    graphics::{
-        BlendMode, Color, Rect, RectangleShape, RenderStates, RenderTarget, RenderWindow, Shape,
-        Text, Transform, Transformable,
-    },
-    system::{Vector2f, Vector2u},
-    window::{ContextSettings, Event, Key, Style},
+    graphics::RenderWindow,
+    window::{ContextSettings, Event, Style},
 };
 use sound_manager::SoundManager;
 use state::{LevelSelect, State};
-use tiled::tile::Gid;
 
 pub mod assets;
 pub mod context;

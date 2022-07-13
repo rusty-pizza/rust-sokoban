@@ -1,15 +1,11 @@
-use std::{ops::ControlFlow, time::Duration};
+use std::ops::ControlFlow;
 
 use sfml::{
-    graphics::{
-        Color, FloatRect, RenderTarget, RenderWindow, Shape, Text, Transform, Transformable,
-    },
-    system::Vector2u,
+    graphics::{FloatRect, RenderWindow},
     window::Event,
 };
-use tiled::{objects::ObjectShape, tile::Gid};
 
-use crate::{assets::AssetManager, context::Context, level::camera_transform};
+use crate::context::Context;
 
 pub struct LevelArray {
     pub rect: FloatRect,

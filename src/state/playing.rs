@@ -1,13 +1,11 @@
 use sfml::graphics::Rect;
 
-use sfml::graphics;
-
 use sfml;
 
 use sfml::graphics::RenderTarget;
-use sfml::graphics::Transform;
+
 use sfml::graphics::Transformable;
-use sfml::system::Vector2u;
+
 use sfml::window::Key;
 
 use super::transitioning::Transitioning;

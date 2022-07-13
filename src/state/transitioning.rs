@@ -94,9 +94,9 @@ impl<'s> State<'s> for Transitioning<'s> {
 
     fn process_event(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
-        window: &mut RenderWindow,
-        event: Event,
+        _ctx: &mut Context<'s, '_, '_>,
+        _window: &mut RenderWindow,
+        _event: Event,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
         ControlFlow::Continue(())
     }
