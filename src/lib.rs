@@ -72,11 +72,8 @@ pub fn run() -> anyhow::Result<()> {
 }
 
 fn create_window() -> RenderWindow {
-    const AA_LEVEL: u32 = 2;
-
     // Create the window of the application
-    let mut context_settings = ContextSettings::default();
-    context_settings.antialiasing_level = AA_LEVEL;
+    let context_settings = ContextSettings::default();
     let mut window = RenderWindow::new(
         (1080, 720),
         "Sokoban!",
