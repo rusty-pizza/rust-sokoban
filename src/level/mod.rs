@@ -66,7 +66,7 @@ impl From<Direction> for Vector2i {
     }
 }
 
-fn play_move_sound(context: Context) {
+fn play_move_sound(context: &mut Context) {
     let buf_to_use = context
         .assets
         .walk_sounds
@@ -79,7 +79,7 @@ fn play_move_sound(context: Context) {
     context.sound.add_sound(sound);
 }
 
-fn play_undo_sound(context: Context) {
+fn play_undo_sound(context: &mut Context) {
     let buf_to_use = context
         .assets
         .undo_sounds
@@ -248,7 +248,7 @@ impl Level<'_> {
         self.goals.iter().all(|g| g.is_done())
     }
 
-    pub fn handle_event(&mut self, context: Context, event: Event) {
+    pub fn handle_event(&mut self, context: &mut Context, event: Event) {
         match event {
             Event::KeyPressed { code: Key::A, .. }
             | Event::KeyPressed {
@@ -278,7 +278,7 @@ impl Level<'_> {
         }
     }
 
-    pub fn undo(&mut self, context: Context) {
+    pub fn undo(&mut self, context: &mut Context) {
         if let Some(m) = self.undo_history.pop() {
             m.apply(self).expect("couldn't undo move");
             play_undo_sound(context);
@@ -286,7 +286,7 @@ impl Level<'_> {
     }
 
     /// Updates the level and the objects within it. Call every frame.
-    pub fn update(&mut self, _context: Context, _delta: std::time::Duration) {
+    pub fn update(&mut self, _context: &mut Context, _delta: std::time::Duration) {
         self.update_crate_opacity();
     }
 
@@ -335,7 +335,7 @@ impl Level<'_> {
     }
 
     /// Moves the player one tile onto the given direction, if possible.
-    pub fn move_player(&mut self, direction: Direction, context: Context) {
+    pub fn move_player(&mut self, direction: Direction, context: &mut Context) {
         let action = Action::Push {
             direction,
             look_direction: direction,
