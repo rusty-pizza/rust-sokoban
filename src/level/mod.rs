@@ -12,7 +12,7 @@ pub mod tilemap;
 use rand::{prelude::SliceRandom, thread_rng};
 use sfml::{
     audio::{Sound, SoundSource},
-    graphics::{Color, Drawable, PrimitiveType, Vertex},
+    graphics::{Color, Drawable, PrimitiveType, Transform, Vertex},
     system::{Vector2f, Vector2i, Vector2u},
     window::{Event, Key},
 };
@@ -402,4 +402,27 @@ impl<'s> Drawable for Level<'s> {
 
         target.draw_with_renderstates(&self.player, states);
     }
+}
+
+pub fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform {
+    const WINDOW_VERTICAL_PADDING: f32 = 200.0;
+    let map_size = Vector2f::new(map_size.x as f32, map_size.y as f32);
+    let window_size = Vector2f::new(window_size.x as f32, window_size.y as f32);
+    let viewport_size = Vector2f::new(window_size.x, window_size.y - WINDOW_VERTICAL_PADDING);
+
+    let scale_factors = map_size / viewport_size;
+    let map_scale = if scale_factors.x > scale_factors.y {
+        scale_factors.x
+    } else {
+        scale_factors.y
+    };
+    let map_px_size = map_size / map_scale;
+
+    let mut x = Transform::IDENTITY;
+    x.scale_with_center(map_scale, map_scale, 0f32, 0f32);
+    x.translate(
+        (map_px_size.x - viewport_size.x) / 2f32 + (viewport_size.x - window_size.x) / 2f32,
+        (map_px_size.y - viewport_size.y) / 2f32 + (viewport_size.y - window_size.y) / 2f32,
+    );
+    x.inverse()
 }

@@ -12,7 +12,7 @@ use sfml::{
     window::{ContextSettings, Event, Key, Style},
 };
 use sound_manager::SoundManager;
-use state::{LevelSelect, PlayState, State};
+use state::{LevelSelect, State};
 use tiled::tile::Gid;
 
 pub mod assets;
