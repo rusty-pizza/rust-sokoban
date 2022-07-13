@@ -20,7 +20,7 @@ impl Tilemap {
     /// Extracts a Tilemap from a given Tiled layer, its related tileset and size.
     pub fn from_tiled_layer(
         size: Vector2u,
-        building_layer: &Vec<LayerTile>,
+        building_layer: &[LayerTile],
         tileset: &Tileset,
     ) -> Self {
         let tiles = building_layer

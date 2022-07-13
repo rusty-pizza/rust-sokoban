@@ -51,9 +51,8 @@ pub fn run() -> anyhow::Result<()> {
         }
 
         while let Some(event) = window.poll_event() {
-            match event {
-                Event::Closed => break 'outer,
-                _ => (),
+            if event == Event::Closed {
+                break 'outer;
             }
 
             if let ControlFlow::Break(new_state) =

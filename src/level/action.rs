@@ -42,7 +42,7 @@ impl Action {
                         .iter()
                         .enumerate()
                         .find(|(_idx, c)| c.position() == cell_to_move_to && !c.in_hole())
-                        .and_then(|(idx, _ref)| Some(idx));
+                        .map(|(idx, _ref)| idx);
 
                     if let Some(crate_to_move_idx) = crate_to_move_idx {
                         let crate_target_position = cell_to_move_to + movement;
@@ -103,7 +103,7 @@ impl Action {
                         .iter()
                         .enumerate()
                         .find(|(_idx, c)| c.position() == cell_to_pull_from)
-                        .and_then(|(idx, _ref)| Some(idx));
+                        .map(|(idx, _ref)| idx);
 
                     if let Some(crate_to_move_idx) = crate_to_move_idx {
                         // Can move and we are pulling a crate with ourselves

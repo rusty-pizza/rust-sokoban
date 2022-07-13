@@ -22,7 +22,7 @@ pub struct CrateStyle(NonZeroU32);
 impl CrateStyle {
     pub(super) fn from_tiled_property(prop: &PropertyValue) -> Option<Self> {
         if let PropertyValue::IntValue(style) = prop {
-            NonZeroU32::new(*style as u32).and_then(|id| Some(CrateStyle(id)))
+            NonZeroU32::new(*style as u32).map(CrateStyle)
         } else {
             None
         }
@@ -38,7 +38,7 @@ pub enum AcceptedCrateStyle {
 impl AcceptedCrateStyle {
     pub(super) fn from_tiled_property(prop: &PropertyValue) -> Self {
         CrateStyle::from_tiled_property(prop)
-            .and_then(|style| Some(Self::Specific(style)))
+            .map(Self::Specific)
             .unwrap_or(Self::Any)
     }
 }
@@ -71,7 +71,7 @@ impl<'s> Crate<'s> {
             .properties
             .0
             .get("style")
-            .and_then(|prop| CrateStyle::from_tiled_property(prop))?;
+            .and_then(CrateStyle::from_tiled_property)?;
 
         let get_frame_gid = |frame: usize| -> Option<Gid> {
             let frames = &tile.animation.as_ref()?.frames;
@@ -155,7 +155,7 @@ impl<'s> Drawable for Crate<'s> {
         target: &mut dyn sfml::graphics::RenderTarget,
         states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
-        self.sprite_atlas.draw(target, &states);
+        self.sprite_atlas.draw(target, states);
     }
 }
 
