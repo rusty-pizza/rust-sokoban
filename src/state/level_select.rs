@@ -146,10 +146,10 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 let mut color;
                 if completed_level || completed_previous_level {
                     let mouse_pos = window.mouse_position();
-                    if level_icon
-                        .global_bounds()
-                        .contains(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32))
-                    {
+                    let mouse_pos = camera_transform
+                        .inverse()
+                        .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
+                    if level_icon.global_bounds().contains(mouse_pos) {
                         if self.clicked {
                             next_state = Some(Box::new(Playing {
                                 level: Level::from_map(level, &ctx.assets).unwrap(),
