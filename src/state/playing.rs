@@ -126,7 +126,6 @@ impl<'s> State<'s> for Playing<'s> {
             } => {
                 return ControlFlow::Break(Box::new(LevelSelect::new(
                     ctx.assets,
-                    window,
                     ctx.completed_levels.len(),
                 )));
             }
