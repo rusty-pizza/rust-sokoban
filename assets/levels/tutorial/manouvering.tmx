@@ -31,10 +31,5 @@
   <object id="23" gid="40" x="1024" y="384" width="128" height="128"/>
   <object id="22" gid="7" x="640" y="384" width="128" height="128"/>
  </objectgroup>
- <objectgroup id="6" name="overlay">
-  <object id="28" gid="200" x="282" y="992" width="100" height="100"/>
-  <object id="29" gid="157" x="360.666" y="992" width="100" height="100"/>
-  <object id="30" gid="210" x="792.666" y="992" width="100" height="100"/>
-  <object id="31" gid="147" x="878" y="992" width="100" height="100"/>
- </objectgroup>
+ <objectgroup id="6" name="overlay"/>
 </map>

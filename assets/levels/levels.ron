@@ -5,6 +5,7 @@
         maps: [
             "tutorial/movement.tmx",
             "tutorial/bricks.tmx",
+            "tutorial/multiple_goals.tmx",
             "tutorial/manouvering.tmx",
             "tutorial/manouvering2.tmx",
             "basic/room.tmx",
