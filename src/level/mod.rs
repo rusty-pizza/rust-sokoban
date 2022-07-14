@@ -12,9 +12,7 @@ pub mod tilemap;
 use rand::{prelude::SliceRandom, thread_rng};
 use sfml::{
     audio::{Sound, SoundSource},
-    graphics::{
-        Color, Drawable, PrimitiveType, RectangleShape, Sprite, Transform, Transformable, Vertex,
-    },
+    graphics::{Color, Drawable, PrimitiveType, Sprite, Transform, Transformable, Vertex},
     system::{Vector2f, Vector2i, Vector2u},
     window::{Event, Key},
 };
@@ -163,7 +161,7 @@ impl<'s> Level<'s> {
         let vertices =
             Self::generate_vertices(&size, &building_layer, &floor_layer, &assets.tilesheet);
 
-        let mut overlay = map
+        let overlay = map
             .object_groups
             .iter()
             .find(|o| o.name == "overlay")
