@@ -212,6 +212,8 @@ impl<'s> State<'s> for LevelSelect<'s> {
             }
         }
 
+        self.clicked = false;
+
         if let Some(next_state) = next_state {
             ControlFlow::Break(next_state)
         } else {
