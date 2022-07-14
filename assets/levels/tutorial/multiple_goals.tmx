@@ -30,9 +30,7 @@
   <object id="37" gid="40" x="768" y="128" width="128" height="128"/>
  </objectgroup>
  <objectgroup id="7" name="overlay">
-  <object id="38" gid="200" x="148" y="867.333" width="100" height="100"/>
-  <object id="39" gid="157" x="226.666" y="867.333" width="100" height="100"/>
-  <object id="40" gid="210" x="658.666" y="867.333" width="100" height="100"/>
-  <object id="41" gid="147" x="744" y="867.333" width="100" height="100"/>
+  <object id="40" gid="210" x="429.333" y="864.667" width="100" height="100"/>
+  <object id="41" gid="147" x="514.667" y="864.667" width="100" height="100"/>
  </objectgroup>
 </map>
