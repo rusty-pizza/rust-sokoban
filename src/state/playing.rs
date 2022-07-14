@@ -115,7 +115,7 @@ impl<'s> State<'s> for Playing<'s> {
                         Level::from_map(
                             &ctx.assets.level_categories[*ctx.current_category_idx].maps
                                 [*ctx.current_level_idx],
-                            &ctx.assets.tilesheet,
+                            &ctx.assets,
                         )
                         .unwrap(),
                     )));
@@ -134,7 +134,7 @@ impl<'s> State<'s> for Playing<'s> {
                 self.level = Level::from_map(
                     &ctx.assets.level_categories[*ctx.current_category_idx].maps
                         [*ctx.current_level_idx],
-                    &ctx.assets.tilesheet,
+                    &ctx.assets,
                 )
                 .unwrap()
             }

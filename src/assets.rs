@@ -77,7 +77,7 @@ impl AssetManager {
         Ok(Self {
             tilesheet: Tilesheet::from_tileset(map.tilesets[0].clone())?,
             main_menu: Map::parse_file(Path::new(MAIN_MENU_PATH))?,
-            icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(0))?,
+            icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(1))?,
             total_level_count: level_categories.iter().flat_map(|c| c.maps.iter()).count(),
             level_categories,
             walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))

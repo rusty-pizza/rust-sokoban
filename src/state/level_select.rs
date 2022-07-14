@@ -157,7 +157,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
         }
 
         for level_array in self.level_arrays.iter() {
-            let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(100)).unwrap();
+            let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
             let category = &ctx.assets.level_categories[level_array.category];
             level_icon.set_position(
                 Vector2f::new(level_array.rect.left, level_array.rect.top) + self.viewport_offset,
@@ -181,7 +181,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                     {
                         if self.clicked {
                             next_state = Some(Box::new(Playing {
-                                level: Level::from_map(level, &ctx.assets.tilesheet).unwrap(),
+                                level: Level::from_map(level, &ctx.assets).unwrap(),
                             }));
                             *ctx.current_category_idx = level_array.category;
                             *ctx.current_level_idx = level_idx;

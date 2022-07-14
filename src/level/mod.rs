@@ -12,7 +12,7 @@ pub mod tilemap;
 use rand::{prelude::SliceRandom, thread_rng};
 use sfml::{
     audio::{Sound, SoundSource},
-    graphics::{Color, Drawable, PrimitiveType, Transform, Vertex},
+    graphics::{Color, Drawable, PrimitiveType, Sprite, Transform, Transformable, Vertex},
     system::{Vector2f, Vector2i, Vector2u},
     window::{Event, Key},
 };
@@ -23,6 +23,7 @@ use tiled::{
 };
 
 use crate::{
+    assets::AssetManager,
     context::Context,
     graphics::{QuadMeshable, Tilesheet},
 };
@@ -94,6 +95,7 @@ fn play_undo_sound(context: &mut Context) {
 /// Represents a sokoban level or puzzle.
 #[derive(Clone)]
 pub struct Level<'s> {
+    overlay: Vec<Sprite<'s>>,
     player_spawn: Vector2i,
     crates: Vec<Crate<'s>>,
     goals: Vec<Goal<'s>>,
@@ -108,12 +110,9 @@ pub struct Level<'s> {
 /// Constructors & parsing-related functions
 impl<'s> Level<'s> {
     /// Load a sokoban level from a Tiled map and its tilesheet.
-    pub fn from_map(map: &Map, tilesheet: &'s Tilesheet) -> Result<Level<'s>, LevelLoadError> {
+    pub fn from_map(map: &Map, assets: &'s AssetManager) -> Result<Level<'s>, LevelLoadError> {
         if map.infinite {
             return Err(LevelLoadError::NotFinite);
-        }
-        if map.tilesets.len() != 1 {
-            todo!("Support for maps with multiple tilesets")
         }
 
         let size = Vector2u::new(map.width, map.height);
@@ -121,11 +120,7 @@ impl<'s> Level<'s> {
         let (building_layer, floor_layer) = Self::get_building_and_floor_layers(&map.layers)
             .ok_or(LevelLoadError::InvalidLayers)?;
 
-        let tilemap = Tilemap::from_tiled_layer(size, &building_layer, tilesheet.tileset());
-
-        if map.object_groups.len() != 1 {
-            return Err(LevelLoadError::InvalidObjectGroups);
-        }
+        let tilemap = Tilemap::from_tiled_layer(size, &building_layer, assets.tilesheet.tileset());
 
         let (crates, goals, player_spawn) = {
             let mut crates = Vec::new();
@@ -136,7 +131,7 @@ impl<'s> Level<'s> {
             for object in objects {
                 use objects::parsing::MapObject::{self, *};
 
-                match MapObject::from_tiled_object(object, map, tilesheet) {
+                match MapObject::from_tiled_object(object, map, &assets.tilesheet) {
                     Some(Spawn { position }) => player_spawn = Some(position),
                     Some(Crate(c)) => crates.push(c),
                     Some(Goal(g)) => goals.push(g),
@@ -156,22 +151,49 @@ impl<'s> Level<'s> {
             )
         };
 
-        let player = Player::new(player_spawn, tilesheet).expect("constructing player");
+        let player = Player::new(player_spawn, &assets.tilesheet).expect("constructing player");
 
         let background_color = map
             .background_color
             .map(|c| Color::rgb(c.red, c.green, c.blue))
             .unwrap_or(Color::BLACK);
 
-        let vertices = Self::generate_vertices(&size, &building_layer, &floor_layer, tilesheet);
+        let vertices =
+            Self::generate_vertices(&size, &building_layer, &floor_layer, &assets.tilesheet);
+
+        let overlay = map
+            .object_groups
+            .iter()
+            .find(|o| o.name == "overlay")
+            .map_or(vec![], |o| {
+                let tile_size = Vector2f::new(
+                    assets.tilesheet.tile_size().x as f32,
+                    assets.tilesheet.tile_size().y as f32,
+                );
+                o.objects
+                    .iter()
+                    .map(|obj| {
+                        let mut sprite = assets
+                            .icon_tilesheet
+                            .tile_sprite(Gid(obj.gid.0 - map.tilesets[1].first_gid.0 + 1))
+                            .expect("invalid gid found in overlay object");
+                        sprite.set_origin(Vector2f::new(0., obj.height));
+                        sprite.set_scale(Vector2f::new(obj.width, obj.height) / 100. / tile_size);
+                        sprite.set_position(Vector2f::new(obj.x, obj.y) / tile_size);
+                        sprite.set_rotation(obj.rotation);
+                        sprite
+                    })
+                    .collect()
+            });
 
         Ok(Self {
+            overlay,
             player_spawn,
             crates,
             goals,
             vertices,
             tilemap,
-            tilesheet,
+            tilesheet: &assets.tilesheet,
             background_color,
             player,
             undo_history: vec![],
@@ -397,14 +419,21 @@ impl<'s> Drawable for Level<'s> {
             .for_each(|g| target.draw_with_renderstates(g, states));
 
         target.draw_with_renderstates(&self.player, states);
+
+        for sprite in self.overlay.iter() {
+            target.draw_with_renderstates(sprite, states);
+        }
     }
 }
 
 pub fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform {
-    const WINDOW_VERTICAL_PADDING: f32 = 200.0;
-    let map_size = Vector2f::new(map_size.x as f32, map_size.y as f32);
+    const WINDOW_VERTICAL_PADDING: f32 = 2.; // In tiles
+    let map_size = Vector2f::new(
+        map_size.x as f32,
+        map_size.y as f32 + WINDOW_VERTICAL_PADDING,
+    );
     let window_size = Vector2f::new(window_size.x as f32, window_size.y as f32);
-    let viewport_size = Vector2f::new(window_size.x, window_size.y - WINDOW_VERTICAL_PADDING);
+    let viewport_size = Vector2f::new(window_size.x, window_size.y);
 
     let scale_factors = map_size / viewport_size;
     let map_scale = if scale_factors.x > scale_factors.y {
@@ -420,5 +449,7 @@ pub fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform 
         (map_px_size.x - viewport_size.x) / 2f32 + (viewport_size.x - window_size.x) / 2f32,
         (map_px_size.y - viewport_size.y) / 2f32 + (viewport_size.y - window_size.y) / 2f32,
     );
+    let tile = map_px_size.y / map_size.y as f32;
+    x.translate(0., -tile * WINDOW_VERTICAL_PADDING / 2.);
     x.inverse()
 }
