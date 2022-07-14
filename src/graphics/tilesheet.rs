@@ -97,7 +97,7 @@ impl Tilesheet {
         let spacing = self.tileset.spacing;
         let tile_width = self.tileset.tile_width;
         let tile_height = self.tileset.tile_height;
-        let tiles_per_row = self.texture.size().x / (tile_width + spacing) + 1;
+        let tiles_per_row = (self.texture.size().x + spacing) / (tile_width + spacing);
         let x = (id % tiles_per_row) * (tile_width + spacing);
         let y = (id / tiles_per_row) * (tile_height + spacing);
 
