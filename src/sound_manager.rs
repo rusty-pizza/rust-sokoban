@@ -20,3 +20,9 @@ impl<'s> SoundManager<'s> {
             .retain(|sound| sound.status() == SoundStatus::PLAYING);
     }
 }
+
+impl<'s> Default for SoundManager<'s> {
+    fn default() -> Self {
+        Self::new()
+    }
+}

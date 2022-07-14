@@ -28,18 +28,18 @@ impl<'s> MapObject<'s> {
         match object_type {
             Some("spawn") => Some(MapObject::Spawn { position }),
             Some("crate") => Some(MapObject::Crate(
-                Crate::new(position, &tilesheet, object.gid).expect("crate creation"),
+                Crate::new(position, tilesheet, object.gid).expect("crate creation"),
             )),
             Some("goal") => {
                 let accepted_style = object
                     .properties
                     .0
                     .get("accepts")
-                    .and_then(|prop| Some(AcceptedCrateStyle::from_tiled_property(prop)))
+                    .map(AcceptedCrateStyle::from_tiled_property)
                     .unwrap_or_default();
 
                 Some(MapObject::Goal(
-                    Goal::new(position, accepted_style, &tilesheet, object.gid)
+                    Goal::new(position, accepted_style, tilesheet, object.gid)
                         .expect("goal creation"),
                 ))
             }

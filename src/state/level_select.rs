@@ -241,7 +241,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 });
                 window.set_view(&view);
 
-                *self = LevelSelect::new(ctx.assets, &window, ctx.completed_levels.len());
+                *self = LevelSelect::new(ctx.assets, window, ctx.completed_levels.len());
             }
 
             // Unlock all levels when Ctrl+I is pressed
@@ -256,7 +256,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                     }
                 }
 
-                *self = LevelSelect::new(ctx.assets, &window, ctx.completed_levels.len());
+                *self = LevelSelect::new(ctx.assets, window, ctx.completed_levels.len());
             }
             _ => (),
         }

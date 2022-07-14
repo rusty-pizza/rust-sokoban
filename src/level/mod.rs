@@ -160,10 +160,10 @@ impl<'s> Level<'s> {
 
         let background_color = map
             .background_color
-            .and_then(|c| Some(Color::rgb(c.red, c.green, c.blue)))
+            .map(|c| Color::rgb(c.red, c.green, c.blue))
             .unwrap_or(Color::BLACK);
 
-        let vertices = Self::generate_vertices(&size, &building_layer, &floor_layer, &tilesheet);
+        let vertices = Self::generate_vertices(&size, &building_layer, &floor_layer, tilesheet);
 
         Ok(Self {
             player_spawn,
@@ -179,9 +179,7 @@ impl<'s> Level<'s> {
     }
 
     /// Extracts the building and floor layers from the given Tiled ones.
-    fn get_building_and_floor_layers(
-        layers: &Vec<Layer>,
-    ) -> Option<(Vec<LayerTile>, Vec<LayerTile>)> {
+    fn get_building_and_floor_layers(layers: &[Layer]) -> Option<(Vec<LayerTile>, Vec<LayerTile>)> {
         let building = layers.iter().find(|l| l.name == "building")?;
         let floor = layers.iter().find(|l| l.name == "floor")?;
 
@@ -197,8 +195,8 @@ impl<'s> Level<'s> {
     /// Generates a static level mesh and returns it.
     fn generate_vertices(
         size_in_tiles: &Vector2u,
-        building_layer: &Vec<LayerTile>,
-        floor_layer: &Vec<LayerTile>,
+        building_layer: &[LayerTile],
+        floor_layer: &[LayerTile],
         tilesheet: &Tilesheet,
     ) -> Vec<Vertex> {
         const FLOOR_OFFSET: Vector2f = Vector2f::new(0.5f32, 0.5f32);
@@ -296,10 +294,8 @@ impl Level<'_> {
             for c in 0..crates.len() {
                 if crates[c].in_hole() {
                     for c_on_top in 0..crates.len() {
-                        if c != c_on_top {
-                            if crates[c_on_top].position() == crates[c].position() {
-                                crates_on_top.push(c_on_top);
-                            }
+                        if c != c_on_top && crates[c_on_top].position() == crates[c].position() {
+                            crates_on_top.push(c_on_top);
                         }
                     }
                 }
@@ -323,14 +319,14 @@ impl Level<'_> {
         });
 
         self.goals.iter_mut().for_each(|g| {
-            self.crates
+            if let Some(c) = self
+                .crates
                 .iter_mut()
-                .filter(|c| c.position() == g.position() && !c.in_hole())
-                .nth(0)
-                .map(|c| {
-                    g.set_done(true);
-                    c.set_is_positioned(true);
-                });
+                .find(|c| c.position() == g.position() && !c.in_hole())
+            {
+                g.set_done(true);
+                c.set_is_positioned(true);
+            };
         })
     }
 
@@ -380,25 +376,25 @@ impl<'s> Drawable for Level<'s> {
         target: &mut dyn sfml::graphics::RenderTarget,
         states: &sfml::graphics::RenderStates<'texture, 'shader, 'shader_texture>,
     ) {
-        let mut level_rstate = states.clone();
-        level_rstate.set_texture(Some(&self.tilesheet.texture()));
+        let mut level_rstate = *states;
+        level_rstate.set_texture(Some(self.tilesheet.texture()));
         target.draw_primitives(&self.vertices, PrimitiveType::QUADS, &level_rstate);
 
         // draw crates in holes (underground) first
         self.crates
             .iter()
             .filter(|c| c.in_hole())
-            .for_each(|c| target.draw_with_renderstates(c, &states));
+            .for_each(|c| target.draw_with_renderstates(c, states));
 
         // then draw the ones on top of the ground
         self.crates
             .iter()
             .filter(|c| !c.in_hole())
-            .for_each(|c| target.draw_with_renderstates(c, &states));
+            .for_each(|c| target.draw_with_renderstates(c, states));
 
         self.goals
             .iter()
-            .for_each(|g| target.draw_with_renderstates(g, &states));
+            .for_each(|g| target.draw_with_renderstates(g, states));
 
         target.draw_with_renderstates(&self.player, states);
     }

@@ -1,9 +1,27 @@
 #![allow(dead_code)]
 
+use std::fmt::Display;
+
 use sfml::{
     graphics::{Drawable, IntRect, Sprite, Texture, Transformable},
     system::Vector2f,
 };
+
+#[derive(Debug)]
+pub struct SetFrameError {
+    index: usize,
+}
+
+impl Display for SetFrameError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "tried to set an atlas' frame index to {}, which it does not contain",
+            self.index
+        ))
+    }
+}
+
+impl std::error::Error for SetFrameError {}
 
 /// A sprite access point for textures that have more than a single sprite.
 /// Each sprite is identified as a "frame" of the atlas.
@@ -21,7 +39,7 @@ impl<'t> SpriteAtlas<'t> {
             current_frame: 0,
             frames: Vec::from(frames),
             sprite: if let Some(first_frame) = frames.get(0) {
-                Sprite::with_texture_and_rect(texture, &first_frame)
+                Sprite::with_texture_and_rect(texture, first_frame)
             } else {
                 Sprite::with_texture(texture)
             },
@@ -36,13 +54,13 @@ impl<'t> SpriteAtlas<'t> {
         self.current_frame
     }
 
-    pub fn set_frame(&mut self, frame: usize) -> Result<(), ()> {
+    pub fn set_frame(&mut self, frame: usize) -> Result<(), SetFrameError> {
         if let Some(rect) = self.frames.get(frame) {
             self.current_frame = frame;
             self.sprite.set_texture_rect(rect);
             Ok(())
         } else {
-            Err(())
+            Err(SetFrameError { index: frame })
         }
     }
 

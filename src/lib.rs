@@ -51,9 +51,8 @@ pub fn run() -> anyhow::Result<()> {
         }
 
         while let Some(event) = window.poll_event() {
-            match event {
-                Event::Closed => break 'outer,
-                _ => (),
+            if event == Event::Closed {
+                break 'outer;
             }
 
             if let ControlFlow::Break(new_state) =
@@ -72,11 +71,8 @@ pub fn run() -> anyhow::Result<()> {
 }
 
 fn create_window() -> RenderWindow {
-    const AA_LEVEL: u32 = 2;
-
     // Create the window of the application
-    let mut context_settings = ContextSettings::default();
-    context_settings.antialiasing_level = AA_LEVEL;
+    let context_settings = ContextSettings::default();
     let mut window = RenderWindow::new(
         (1080, 720),
         "Sokoban!",

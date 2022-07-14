@@ -14,11 +14,11 @@ use tiled::{map::Map, tile::Gid};
 
 use crate::graphics::Tilesheet;
 
-pub const MOVE_SOUND_DIR: &'static str = "assets/sound/move";
-pub const UNDO_SOUND_DIR: &'static str = "assets/sound/undo";
-pub const WIN_FONT_PATH: &'static str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
-pub const ICON_TILESHEET_PATH: &'static str = "assets/tilesheets/icons.tsx";
-pub const MAIN_MENU_PATH: &'static str = "assets/levels/main_menu.tmx";
+pub const MOVE_SOUND_DIR: &str = "assets/sound/move";
+pub const UNDO_SOUND_DIR: &str = "assets/sound/undo";
+pub const WIN_FONT_PATH: &str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
+pub const ICON_TILESHEET_PATH: &str = "assets/tilesheets/icons.tsx";
+pub const MAIN_MENU_PATH: &str = "assets/levels/main_menu.tmx";
 
 pub struct LevelCategory {
     pub name: String,

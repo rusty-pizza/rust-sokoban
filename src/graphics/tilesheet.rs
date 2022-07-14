@@ -43,7 +43,7 @@ pub enum TilesheetLoadError {
 
 impl Tilesheet {
     /// Create a tilesheet from a Tiled tileset, loading its texture along the way.
-    pub fn from_tileset<'p>(tileset: Tileset) -> Result<Self, TilesheetLoadError> {
+    pub fn from_tileset(tileset: Tileset) -> Result<Self, TilesheetLoadError> {
         let tileset_image = tileset
             .images
             .first()
@@ -51,11 +51,9 @@ impl Tilesheet {
 
         let mut texture = {
             let origin_path = match &tileset.source {
-                Some(path) => path
-                    .parent()
-                    .ok_or(TilesheetLoadError::TilesetHasInvalidSource(Some(
-                        path.clone(),
-                    )))?,
+                Some(path) => path.parent().ok_or_else(|| {
+                    TilesheetLoadError::TilesetHasInvalidSource(Some(path.clone()))
+                })?,
                 None => return Err(TilesheetLoadError::TilesetHasInvalidSource(None)),
             };
 
@@ -72,7 +70,7 @@ impl Tilesheet {
     }
 
     /// Load a tilesheet from a path to a Tiled tileset, loading its texture along the way.
-    pub fn from_file<'p>(path: &'p Path, first_gid: Gid) -> Result<Self, TilesheetLoadError> {
+    pub fn from_file(path: &Path, first_gid: Gid) -> Result<Self, TilesheetLoadError> {
         let tileset = {
             let file = File::open(path)?;
             let reader = BufReader::new(file);
@@ -138,6 +136,6 @@ impl Tilesheet {
 
     pub fn tile_sprite(&self, gid: Gid) -> Option<Sprite> {
         self.tile_rect(gid)
-            .and_then(|rect| Some(Sprite::with_texture_and_rect(&self.texture, &rect)))
+            .map(|rect| Sprite::with_texture_and_rect(&self.texture, &rect))
     }
 }

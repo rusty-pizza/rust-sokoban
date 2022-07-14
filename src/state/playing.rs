@@ -125,8 +125,8 @@ impl<'s> State<'s> for Playing<'s> {
                 code: Key::Escape, ..
             } => {
                 return ControlFlow::Break(Box::new(LevelSelect::new(
-                    &ctx.assets,
-                    &window,
+                    ctx.assets,
+                    window,
                     ctx.completed_levels.len(),
                 )));
             }
