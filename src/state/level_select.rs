@@ -1,7 +1,9 @@
 use std::ops::ControlFlow;
 
 use sfml::{
-    graphics::{BlendMode, FloatRect, Rect, RenderStates, RenderTarget, Transform, Transformable},
+    graphics::{
+        BlendMode, Drawable, FloatRect, Rect, RenderStates, RenderTarget, Transform, Transformable,
+    },
     system::Vector2u,
     window::{Event, Key},
 };
@@ -23,14 +25,14 @@ use super::{playing::Playing, LevelArray, State};
 use sfml::graphics::Text;
 
 pub struct LevelSelect<'s> {
-    pub(crate) texts: Vec<Text<'s>>,
+    pub(crate) drawables: Vec<Box<dyn Drawable + 's>>,
     pub(crate) level_arrays: Vec<LevelArray>,
     pub(crate) clicked: bool,
 }
 
 impl<'s> LevelSelect<'s> {
     pub fn new(assets: &'s AssetManager, completed_level_count: usize) -> Self {
-        let mut texts = Vec::new();
+        let mut drawables: Vec<Box<dyn Drawable + 's>> = Vec::new();
         let mut level_arrays = Vec::new();
 
         for object in assets.main_menu.object_groups[0].objects.iter() {
@@ -79,7 +81,26 @@ impl<'s> LevelSelect<'s> {
                     },
                 ));
 
-                texts.push(text);
+                drawables.push(Box::new(text));
+            } else if object.gid != Gid::EMPTY {
+                let gid_tileset = assets
+                    .main_menu
+                    .tileset_by_gid(object.gid)
+                    .expect("object in main menu has invalid gid");
+                let tile_size = gid_tileset.tile_width as f32;
+                let tilesheet = match gid_tileset.name.as_str() {
+                    "icons" => &assets.icon_tilesheet,
+                    "Sokoban" => &assets.tilesheet,
+                    _ => panic!("invalid tilesheet name for tile object found in main menu"),
+                };
+                let mut sprite = tilesheet
+                    .tile_sprite(Gid(object.gid.0 - gid_tileset.first_gid.0 + 1))
+                    .expect("invalid gid found in overlay object");
+                //sprite.set_origin(Vector2f::new(0., object.height));
+                sprite.set_scale(Vector2f::new(object.width, object.height) / tile_size);
+                sprite.set_position(Vector2f::new(object.x, object.y));
+                sprite.set_rotation(object.rotation);
+                drawables.push(Box::new(sprite));
             } else if object.name == "level_array" {
                 let rect = FloatRect::new(object.x, object.y, object.width, object.height);
                 let category = assets
@@ -94,7 +115,7 @@ impl<'s> LevelSelect<'s> {
         }
 
         Self {
-            texts,
+            drawables,
             level_arrays,
             clicked: false,
         }
@@ -125,8 +146,8 @@ impl<'s> State<'s> for LevelSelect<'s> {
         );
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
-        for text in self.texts.iter() {
-            window.draw_with_renderstates(text, &render_states);
+        for drawable in self.drawables.iter() {
+            window.draw_with_renderstates(drawable.as_ref(), &render_states);
         }
 
         for level_array in self.level_arrays.iter() {
