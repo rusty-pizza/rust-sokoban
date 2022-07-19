@@ -177,7 +177,6 @@ impl<'s> Level<'s> {
                             .icon_tilesheet
                             .tile_sprite(Gid(obj.gid.0 - map.tilesets[1].first_gid.0 + 1))
                             .expect("invalid gid found in overlay object");
-                        sprite.set_origin(Vector2f::new(0., obj.height));
                         sprite.set_scale(
                             Vector2f::new(
                                 obj.width / sprite.texture_rect().width as f32,

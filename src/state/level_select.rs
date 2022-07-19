@@ -95,7 +95,6 @@ impl<'s> LevelSelect<'s> {
                 let mut sprite = tilesheet
                     .tile_sprite(Gid(object.gid.0 - gid_tileset.first_gid.0 + 1))
                     .expect("invalid gid found in overlay object");
-                //sprite.set_origin(Vector2f::new(0., object.height));
                 sprite.set_scale(Vector2f::new(
                     object.width / sprite.texture_rect().width as f32,
                     object.height / sprite.texture_rect().height as f32,
