@@ -26,7 +26,7 @@ pub fn run() -> anyhow::Result<()> {
     let mut current_level_idx = 0;
     let mut window = create_window();
     let mut sound = SoundManager::new();
-    let mut state: Box<dyn State> = Box::new(LevelSelect::new(&assets, &window, 0));
+    let mut state: Box<dyn State> = Box::new(LevelSelect::new(&assets, 0));
     let mut completed_levels: HashSet<PathBuf> = HashSet::new();
 
     let mut last_frame_time = std::time::Instant::now();

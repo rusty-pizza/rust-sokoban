@@ -1,33 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="100" tileheight="100" infinite="0" backgroundcolor="#1e1e1e" nextlayerid="3" nextobjectid="12">
+<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="100" tileheight="100" infinite="0" backgroundcolor="#1e1e1e" nextlayerid="3" nextobjectid="26">
  <tileset firstgid="1" source="../tilesheets/icons.tsx"/>
- <layer id="1" name="Tile Layer 1" width="16" height="9">
+ <tileset firstgid="201" source="../tilesheets/sokoban_tilesheet.tsx"/>
+ <layer id="1" name="Tile Layer 1" width="16" height="9" visible="0">
   <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+224,224,224,224,224,224,224,224,224,224,224,224,223,223,223,222,
+224,224,224,224,224,224,224,224,224,224,224,223,223,223,222,222,
+224,224,224,224,224,224,224,224,224,224,223,223,223,222,222,222,
+224,224,224,224,224,224,224,224,224,223,223,223,222,222,222,221,
+224,224,224,224,224,224,224,224,223,223,223,222,222,222,221,221,
+224,224,224,224,224,224,224,223,223,223,222,222,222,221,221,221,
+224,224,224,224,224,224,223,223,223,222,222,222,221,221,221,224,
+224,224,224,224,224,223,223,223,222,222,222,221,221,221,224,224,
+224,224,224,224,223,223,223,222,222,222,221,221,221,224,224,224
 </data>
  </layer>
  <objectgroup id="2" name="Object Layer 1">
-  <object id="1" x="32" y="0" width="1173.38" height="100.333">
-   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" valign="bottom">Basic</text>
+  <object id="24" x="0" y="0" width="1600" height="200">
+   <properties>
+    <property name="color" type="color" value="#ff141414"/>
+   </properties>
   </object>
-  <object id="8" x="1100" y="600" width="399.385" height="100.333">
-   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" halign="center" valign="bottom">Total Levels</text>
+  <object id="1" x="50" y="278" width="1152.05" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#f0f0f0" valign="bottom">Basic</text>
   </object>
-  <object id="9" name="level_metrics" x="1100" y="700" width="399.385" height="100.333">
-   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" halign="center" valign="bottom">0/0</text>
+  <object id="8" x="1169.33" y="210" width="430.052" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="48" wrap="1" color="#f0f0f0">Levels Completed</text>
   </object>
-  <object id="2" x="32" y="200" width="1153.38" height="100.333">
-   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#ffffff" valign="bottom">Holes</text>
+  <object id="9" name="level_metrics" x="997" y="210" width="155.385" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="48" wrap="1" color="#f0f0f0" halign="right">0/0</text>
   </object>
-  <object id="3" name="level_array" type="Basic" x="0" y="100" width="1200" height="100"/>
-  <object id="4" name="level_array" type="Holes" x="0" y="300" width="1200" height="100"/>
+  <object id="2" x="50" y="478" width="1149.38" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#f0f0f0" valign="bottom">Holes</text>
+  </object>
+  <object id="3" name="level_array" type="Basic" x="30" y="378" width="1200" height="100"/>
+  <object id="4" name="level_array" type="Holes" x="30" y="578" width="1200" height="100"/>
+  <object id="12" gid="267" x="30.6667" y="28.6667" width="138.667" height="138.667"/>
+  <object id="14" x="179.977" y="47.1668" width="594.713" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="96" wrap="1" color="#ffffff" valign="center">Sokoban!</text>
+  </object>
+  <object id="17" x="1103" y="94" width="350" height="45">
+   <text fontfamily="Varela Round" pixelsize="32" wrap="1" color="#585962" halign="right" valign="center">With code &amp; levels by</text>
+  </object>
+  <object id="18" x="1484" y="97.3333" width="94.713" height="45.6663">
+   <text fontfamily="Varela Round" pixelsize="32" wrap="1" color="#9b59b6" halign="right" valign="center">aleok</text>
+  </object>
+  <object id="19" x="1103" y="134.834" width="350" height="45">
+   <text fontfamily="Varela Round" pixelsize="32" wrap="1" color="#585962" halign="right" valign="center">Assets by</text>
+  </object>
+  <object id="20" x="1451.81" y="134.834" width="126.713" height="45.6663">
+   <text fontfamily="Varela Round" pixelsize="32" wrap="1" color="#2ecc92" halign="right" valign="center">Kenney</text>
+  </object>
+  <object id="22" x="50" y="210" width="418.713" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="48" wrap="1" color="#f0f0f0">Select a level</text>
+  </object>
  </objectgroup>
 </map>
