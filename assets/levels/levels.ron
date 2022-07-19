@@ -16,9 +16,12 @@
         name: "Holes",
         color: 0x8d6b94,
         maps: [
+            "holes/tutorial0.tmx",
             "holes/tutorial.tmx",
             "holes/tutorial2.tmx",
             "holes/pit.tmx",
+            "holes/pit2.tmx",
+            "holes/pit3.tmx",
             "holes/cliff.tmx",
             "holes/roundabout.tmx",
             "holes/alt_route.tmx",
