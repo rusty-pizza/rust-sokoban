@@ -87,7 +87,6 @@ impl<'s> LevelSelect<'s> {
                     .main_menu
                     .tileset_by_gid(object.gid)
                     .expect("object in main menu has invalid gid");
-                let tile_size = gid_tileset.tile_width as f32;
                 let tilesheet = match gid_tileset.name.as_str() {
                     "icons" => &assets.icon_tilesheet,
                     "Sokoban" => &assets.tilesheet,
@@ -97,7 +96,10 @@ impl<'s> LevelSelect<'s> {
                     .tile_sprite(Gid(object.gid.0 - gid_tileset.first_gid.0 + 1))
                     .expect("invalid gid found in overlay object");
                 //sprite.set_origin(Vector2f::new(0., object.height));
-                sprite.set_scale(Vector2f::new(object.width, object.height) / tile_size);
+                sprite.set_scale(Vector2f::new(
+                    object.width / sprite.texture_rect().width as f32,
+                    object.height / sprite.texture_rect().height as f32,
+                ));
                 sprite.set_position(Vector2f::new(object.x, object.y));
                 sprite.set_rotation(object.rotation);
                 drawables.push(Box::new(sprite));
