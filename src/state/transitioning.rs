@@ -15,6 +15,7 @@ use std::ops::ControlFlow;
 
 use sfml::graphics::RenderWindow;
 
+use crate::assets::AssetManager;
 use crate::context::Context;
 use crate::level::camera_transform;
 
@@ -25,20 +26,33 @@ use std::time::Duration;
 
 use crate::level::Level;
 
+// TODO: Make it transition between states (Requires separating State.tick into update & draw)
 pub struct Transitioning<'s> {
     pub(crate) prev_level: Level<'s>,
     pub(crate) next_level: Level<'s>,
+    next_level_index: usize,
+    next_level_category: usize,
     pub(crate) time_left: Duration,
 }
 
 impl<'s> Transitioning<'s> {
     pub(crate) const TRANSITION_TIME: Duration = Duration::from_secs(1);
-    pub(crate) fn new(prev_level: Level<'s>, next_level: Level<'s>) -> Self {
-        Self {
+    pub(crate) fn new(
+        assets: &'s AssetManager,
+        prev_level: Level<'s>,
+        next_level_index: usize,
+        next_level_category: usize,
+    ) -> anyhow::Result<Self> {
+        Ok(Self {
             prev_level,
-            next_level,
+            next_level: Level::from_map(
+                &assets.level_categories[next_level_category].maps[next_level_index],
+                assets,
+            )?,
+            next_level_category,
+            next_level_index,
             time_left: Self::TRANSITION_TIME,
-        }
+        })
     }
 }
 
@@ -84,9 +98,9 @@ impl<'s> State<'s> for Transitioning<'s> {
         self.time_left = self.time_left.saturating_sub(ctx.delta_time);
 
         if self.time_left.is_zero() {
-            ControlFlow::Break(Box::new(Playing {
-                level: current_level.clone(),
-            }))
+            ControlFlow::Break(Box::new(
+                Playing::new(ctx.assets, self.next_level_index, self.next_level_category).unwrap(),
+            ))
         } else {
             ControlFlow::Continue(())
         }

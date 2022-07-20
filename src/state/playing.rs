@@ -27,6 +27,7 @@ use std::ops::ControlFlow;
 
 use sfml::graphics::RenderWindow;
 
+use crate::assets::AssetManager;
 use crate::context::Context;
 use crate::level::camera_transform;
 
@@ -35,7 +36,26 @@ use super::State;
 use crate::level::Level;
 
 pub struct Playing<'s> {
+    level_index: usize,
+    category_index: usize,
     pub(crate) level: Level<'s>,
+}
+
+impl<'s> Playing<'s> {
+    pub fn new(
+        assets: &'s AssetManager,
+        level_index: usize,
+        category_index: usize,
+    ) -> anyhow::Result<Self> {
+        Ok(Self {
+            level_index,
+            category_index,
+            level: Level::from_map(
+                &assets.level_categories[category_index].maps[level_index],
+                assets,
+            )?,
+        })
+    }
 }
 
 impl<'s> State<'s> for Playing<'s> {
@@ -87,38 +107,34 @@ impl<'s> State<'s> for Playing<'s> {
             Event::KeyPressed { .. } if is_level_won => {
                 // Mark this level as complete
                 ctx.completed_levels.insert(
-                    ctx.assets.level_categories[*ctx.current_category_idx].maps
-                        [*ctx.current_level_idx]
+                    ctx.assets.level_categories[self.category_index].maps[self.level_index]
                         .source
                         .clone()
                         .unwrap(),
                 );
 
-                // Go to next level
-                *ctx.current_level_idx += 1;
-
-                if *ctx.current_level_idx
-                    >= ctx.assets.level_categories[*ctx.current_category_idx]
-                        .maps
-                        .len()
+                let (next_level_category, next_level_index) = if self.level_index + 1
+                    >= ctx.assets.level_categories[self.category_index].maps.len()
                 {
-                    *ctx.current_level_idx = 0;
-                    *ctx.current_category_idx += 1;
-                }
+                    (self.category_index + 1, 0)
+                } else {
+                    (self.category_index, self.level_index + 1)
+                };
 
-                if *ctx.current_category_idx >= ctx.assets.level_categories.len() {
+                // Go to next level
+                if next_level_category >= ctx.assets.level_categories.len() {
                     println!("You won!");
                     std::process::exit(0);
                 } else {
-                    return ControlFlow::Break(Box::new(Transitioning::new(
-                        self.level.clone(),
-                        Level::from_map(
-                            &ctx.assets.level_categories[*ctx.current_category_idx].maps
-                                [*ctx.current_level_idx],
-                            &ctx.assets,
+                    return ControlFlow::Break(Box::new(
+                        Transitioning::new(
+                            ctx.assets,
+                            self.level.clone(),
+                            next_level_index,
+                            next_level_category,
                         )
                         .unwrap(),
-                    )));
+                    ));
                 }
             }
             Event::KeyPressed {
@@ -131,8 +147,7 @@ impl<'s> State<'s> for Playing<'s> {
             }
             Event::KeyPressed { code: Key::R, .. } => {
                 self.level = Level::from_map(
-                    &ctx.assets.level_categories[*ctx.current_category_idx].maps
-                        [*ctx.current_level_idx],
+                    &ctx.assets.level_categories[self.category_index].maps[self.level_index],
                     &ctx.assets,
                 )
                 .unwrap()

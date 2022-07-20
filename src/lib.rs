@@ -40,8 +40,6 @@ pub fn run() -> anyhow::Result<()> {
         let mut context = Context {
             assets: &assets,
             completed_levels: &mut completed_levels,
-            current_category_idx: &mut current_category_idx,
-            current_level_idx: &mut current_level_idx,
             delta_time,
             sound: &mut sound,
         };

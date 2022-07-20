@@ -16,7 +16,7 @@ use tiled::objects::ObjectShape;
 
 use sfml::graphics::RenderWindow;
 
-use crate::{assets::AssetManager, context::Context, level::Level};
+use crate::{assets::AssetManager, context::Context};
 
 use sfml::system::Vector2f;
 
@@ -173,11 +173,9 @@ impl<'s> State<'s> for LevelSelect<'s> {
                         .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
                     if level_icon.global_bounds().contains(mouse_pos) {
                         if self.clicked {
-                            next_state = Some(Box::new(Playing {
-                                level: Level::from_map(level, &ctx.assets).unwrap(),
-                            }));
-                            *ctx.current_category_idx = level_array.category;
-                            *ctx.current_level_idx = level_idx;
+                            next_state = Some(Box::new(
+                                Playing::new(ctx.assets, level_idx, level_array.category).unwrap(),
+                            ));
                         }
 
                         let amount_to_saturate = if sfml::window::mouse::Button::Left.is_pressed() {
