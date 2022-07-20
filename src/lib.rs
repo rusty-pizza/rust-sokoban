@@ -58,6 +58,8 @@ pub fn run() -> anyhow::Result<()> {
             }
         }
 
+        state.draw(&mut context, &mut window);
+
         window.display();
 
         last_frame_time = this_frame_time;

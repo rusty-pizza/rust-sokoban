@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use sfml::{
-    graphics::{FloatRect, RenderWindow},
+    graphics::{FloatRect, RenderTarget, RenderWindow},
     window::Event,
 };
 
@@ -18,6 +18,8 @@ pub trait State<'s> {
         ctx: &mut Context<'s, '_, '_>,
         window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()>;
+
+    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget);
 
     fn process_event(
         &mut self,
