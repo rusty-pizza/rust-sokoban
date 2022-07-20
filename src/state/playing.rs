@@ -35,6 +35,7 @@ use super::State;
 
 use crate::level::Level;
 
+#[derive(Clone)]
 pub struct Playing<'s> {
     level_index: usize,
     category_index: usize,
@@ -103,9 +104,9 @@ impl<'s> State<'s> for Playing<'s> {
                     return ControlFlow::Break(Box::new(
                         Transitioning::new(
                             ctx.assets,
-                            self.level.clone(),
-                            next_level_index,
-                            next_level_category,
+                            self.clone(),
+                            Playing::new(ctx.assets, next_level_index, next_level_category)
+                                .unwrap(),
                         )
                         .unwrap(),
                     ));

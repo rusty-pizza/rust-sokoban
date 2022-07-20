@@ -1,5 +1,9 @@
+use sfml::graphics::Color;
+use sfml::graphics::Rect;
 use sfml::graphics::RenderTarget;
+use sfml::graphics::RenderTexture;
 use sfml::graphics::Shape;
+use sfml::graphics::Sprite;
 use sfml::graphics::Transformable;
 use sfml::window::Event;
 
@@ -28,29 +32,22 @@ use crate::level::Level;
 
 // TODO: Make it transition between states (Requires separating State.tick into update & draw)
 pub struct Transitioning<'s> {
-    pub(crate) prev_level: Level<'s>,
-    pub(crate) next_level: Level<'s>,
-    next_level_index: usize,
-    next_level_category: usize,
+    pub(crate) prev_state: Box<dyn State<'s> + 's>,
+    // HACK: This is an option because `tick` does not move the state and as such we cannot move the next state out
+    pub(crate) next_state: Option<Box<dyn State<'s> + 's>>,
     pub(crate) time_left: Duration,
 }
 
 impl<'s> Transitioning<'s> {
-    pub(crate) const TRANSITION_TIME: Duration = Duration::from_secs(1);
+    pub(crate) const TRANSITION_TIME: Duration = Duration::from_millis(500);
     pub(crate) fn new(
         assets: &'s AssetManager,
-        prev_level: Level<'s>,
-        next_level_index: usize,
-        next_level_category: usize,
+        prev_state: impl State<'s> + 's,
+        next_state: impl State<'s> + 's,
     ) -> anyhow::Result<Self> {
         Ok(Self {
-            prev_level,
-            next_level: Level::from_map(
-                &assets.level_categories[next_level_category].maps[next_level_index],
-                assets,
-            )?,
-            next_level_category,
-            next_level_index,
+            prev_state: Box::new(prev_state),
+            next_state: Some(Box::new(next_state)),
             time_left: Self::TRANSITION_TIME,
         })
     }
@@ -66,9 +63,7 @@ impl<'s> State<'s> for Transitioning<'s> {
         self.time_left = self.time_left.saturating_sub(ctx.delta_time);
 
         if self.time_left.is_zero() {
-            ControlFlow::Break(Box::new(
-                Playing::new(ctx.assets, self.next_level_index, self.next_level_category).unwrap(),
-            ))
+            ControlFlow::Break(self.next_state.take().unwrap())
         } else {
             ControlFlow::Continue(())
         }
@@ -83,37 +78,30 @@ impl<'s> State<'s> for Transitioning<'s> {
         ControlFlow::Continue(())
     }
 
-    fn draw(&self, _ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget) {
-        let is_fading_out = self.time_left > Self::TRANSITION_TIME / 2;
+    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget) {
+        let mut render_target = RenderTexture::new(target.size().x, target.size().y).unwrap();
 
-        let current_level = if is_fading_out {
-            &self.prev_level
-        } else {
-            &self.next_level
-        };
+        self.next_state
+            .as_ref()
+            .unwrap()
+            .draw(ctx, &mut render_target);
 
-        let camera_transform = camera_transform(target.size(), current_level.tilemap().size());
-        let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
+        let mut overlay_sprite = Sprite::with_texture_and_rect(
+            render_target.texture(),
+            &Rect {
+                width: target.size().x as i32,
+                height: -(target.size().y as i32),
+                top: target.size().y as i32,
+                ..Default::default()
+            },
+        );
 
-        target.clear(current_level.background_color);
+        let transition_alpha = (255.
+            - (self.time_left.as_secs_f32() / Self::TRANSITION_TIME.as_secs_f32()) * 255.)
+            as u8;
+        overlay_sprite.set_color(Color::rgba(255, 255, 255, transition_alpha));
 
-        // TODO: Cache shape
-        let mut transition_overlay = RectangleShape::with_size(Vector2f::new(
-            current_level.tilemap().size().x as f32 + 10.,
-            current_level.tilemap().size().y as f32 + 10.,
-        ));
-        transition_overlay.set_position(Vector2f::new(-5., -5.));
-
-        let mut transition_color = self.prev_level.background_color;
-        *transition_color.alpha_mut() = (255.
-            - ((self.time_left.as_secs_f32() / (Self::TRANSITION_TIME.as_secs_f32() / 2.)) - 1.)
-                .abs()
-                * 255.) as u8;
-
-        // TODO: Transition between both background colors
-        transition_overlay.set_fill_color(transition_color);
-
-        target.draw_with_renderstates(current_level, &render_states);
-        target.draw_with_renderstates(&transition_overlay, &render_states);
+        self.prev_state.draw(ctx, target);
+        target.draw(&overlay_sprite);
     }
 }
