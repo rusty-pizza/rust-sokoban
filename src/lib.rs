@@ -22,8 +22,6 @@ pub mod state;
 pub fn run() -> anyhow::Result<()> {
     // Initialize
     let assets = AssetManager::load()?;
-    let mut current_category_idx = 0;
-    let mut current_level_idx = 0;
     let mut window = create_window();
     let mut sound = SoundManager::new();
     let mut state: Box<dyn State> = Box::new(LevelSelect::new(&assets, 0));
