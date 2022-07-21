@@ -2,7 +2,7 @@
 
 #![allow(dead_code)]
 
-use std::num::NonZeroU32;
+use std::{fmt::Display, num::NonZeroU32};
 
 use sfml::{
     graphics::{Drawable, Transformable},
@@ -19,12 +19,27 @@ pub(super) mod parsing;
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct CrateStyle(NonZeroU32);
 
+#[derive(Debug)]
+pub struct CrateStyleParseError;
+
+impl Display for CrateStyleParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(
+            "could not parse crate style from property as it is not a non-zero integer value",
+        )
+    }
+}
+
+impl std::error::Error for CrateStyleParseError {}
+
 impl CrateStyle {
-    pub(super) fn from_tiled_property(prop: &PropertyValue) -> Option<Self> {
+    pub(super) fn from_tiled_property(prop: &PropertyValue) -> Result<Self, CrateStyleParseError> {
         if let PropertyValue::IntValue(style) = prop {
-            NonZeroU32::new(*style as u32).map(CrateStyle)
+            NonZeroU32::new(*style as u32)
+                .map(CrateStyle)
+                .ok_or(CrateStyleParseError)
         } else {
-            None
+            Err(CrateStyleParseError)
         }
     }
 }
@@ -36,10 +51,12 @@ pub enum AcceptedCrateStyle {
 }
 
 impl AcceptedCrateStyle {
-    pub(super) fn from_tiled_property(prop: &PropertyValue) -> Self {
-        CrateStyle::from_tiled_property(prop)
-            .map(Self::Specific)
-            .unwrap_or(Self::Any)
+    pub fn accepts(self, style: CrateStyle) -> bool {
+        match self {
+            AcceptedCrateStyle::Specific(accepted) if accepted == style => true,
+            AcceptedCrateStyle::Any => true,
+            _ => false,
+        }
     }
 }
 
@@ -67,11 +84,10 @@ impl<'s> Crate<'s> {
     pub fn new(position: Vector2i, tilesheet: &'s Tilesheet, gid: Gid) -> Option<Self> {
         let tile = tilesheet.tileset().get_tile_by_gid(gid)?;
 
-        let crate_type = tile
-            .properties
-            .0
-            .get("style")
-            .and_then(CrateStyle::from_tiled_property)?;
+        let crate_type = match tile.properties.0.get("style") {
+            Some(x) => CrateStyle::from_tiled_property(x).unwrap(),
+            None => None?,
+        };
 
         let get_frame_gid = |frame: usize| -> Option<Gid> {
             let frames = &tile.animation.as_ref()?.frames;
@@ -147,6 +163,11 @@ impl<'s> Crate<'s> {
             })
             .unwrap();
     }
+
+    /// Get the crate's style.
+    pub fn style(&self) -> CrateStyle {
+        self.style
+    }
 }
 
 impl<'s> Drawable for Crate<'s> {
@@ -171,13 +192,11 @@ impl<'s> Goal<'s> {
     const PENDING_FRAME: usize = 0;
     const DONE_FRAME: usize = 1;
 
-    pub fn new(
-        position: Vector2i,
-        accepted_style: AcceptedCrateStyle,
-        tilesheet: &'s Tilesheet,
-        gid: Gid,
-    ) -> Option<Self> {
-        let tile = tilesheet.tileset().get_tile_by_gid(gid)?;
+    pub fn new(position: Vector2i, tilesheet: &'s Tilesheet, gid: Gid) -> anyhow::Result<Self> {
+        let tile = tilesheet
+            .tileset()
+            .get_tile_by_gid(gid)
+            .ok_or_else(|| anyhow::anyhow!("goal tile gid does not exist in tilesheet"))?;
 
         let get_frame_gid = |frame: usize| -> Option<Gid> {
             let frames = &tile.animation.as_ref()?.frames;
@@ -186,8 +205,20 @@ impl<'s> Goal<'s> {
             ))
         };
 
-        let pending_tex_rect = tilesheet.tile_rect(gid)?;
-        let done_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::DONE_FRAME)?)?;
+        let accepted_style = match tile.properties.0.get("accepts") {
+            Some(x) => AcceptedCrateStyle::Specific(CrateStyle::from_tiled_property(x)?),
+            None => AcceptedCrateStyle::Any,
+        };
+
+        let pending_tex_rect = tilesheet
+            .tile_rect(gid)
+            .ok_or_else(|| anyhow::anyhow!("could not obtain goal tile rect"))?;
+        let done_tex_rect = tilesheet
+            .tile_rect(
+                get_frame_gid(Self::DONE_FRAME)
+                    .ok_or_else(|| anyhow::anyhow!("could not obtain goal DONE frame gid"))?,
+            )
+            .ok_or_else(|| anyhow::anyhow!("could not obtain goal DONE tile rect"))?;
 
         let sprite_atlas = {
             let mut sprite_atlas = SpriteAtlas::with_texture_and_frames(
@@ -202,7 +233,7 @@ impl<'s> Goal<'s> {
             sprite_atlas
         };
 
-        Some(Self {
+        Ok(Self {
             position,
             accepted_style,
             sprite_atlas,
@@ -226,6 +257,11 @@ impl<'s> Goal<'s> {
     /// Get the goal's position.
     pub fn position(&self) -> Vector2i {
         self.position
+    }
+
+    /// Get the goal's accepted style.
+    pub fn accepted_style(&self) -> AcceptedCrateStyle {
+        self.accepted_style
     }
 }
 

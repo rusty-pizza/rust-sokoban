@@ -17,7 +17,7 @@
    <frame tileid="19" duration="1000"/>
   </animation>
  </tile>
- <tile id="7">
+ <tile id="7" type="crate">
   <properties>
    <property name="style" type="int" value="2"/>
   </properties>
@@ -27,7 +27,7 @@
    <frame tileid="20" duration="1000"/>
   </animation>
  </tile>
- <tile id="8">
+ <tile id="8" type="crate">
   <properties>
    <property name="style" type="int" value="3"/>
   </properties>
@@ -37,7 +37,7 @@
    <frame tileid="21" duration="1000"/>
   </animation>
  </tile>
- <tile id="9">
+ <tile id="9" type="crate">
   <properties>
    <property name="style" type="int" value="4"/>
   </properties>
@@ -47,7 +47,7 @@
    <frame tileid="22" duration="1000"/>
   </animation>
  </tile>
- <tile id="10">
+ <tile id="10" type="crate">
   <properties>
    <property name="style" type="int" value="5"/>
   </properties>
@@ -68,26 +68,46 @@
   <properties>
    <property name="accepts" type="int" value="1"/>
   </properties>
+  <animation>
+   <frame tileid="40" duration="500"/>
+   <frame tileid="13" duration="500"/>
+  </animation>
  </tile>
  <tile id="41" type="goal">
   <properties>
    <property name="accepts" type="int" value="2"/>
   </properties>
+  <animation>
+   <frame tileid="41" duration="500"/>
+   <frame tileid="13" duration="500"/>
+  </animation>
  </tile>
  <tile id="42" type="goal">
   <properties>
    <property name="accepts" type="int" value="3"/>
   </properties>
+  <animation>
+   <frame tileid="42" duration="500"/>
+   <frame tileid="13" duration="500"/>
+  </animation>
  </tile>
  <tile id="43" type="goal">
   <properties>
    <property name="accepts" type="int" value="4"/>
   </properties>
+  <animation>
+   <frame tileid="43" duration="500"/>
+   <frame tileid="13" duration="500"/>
+  </animation>
  </tile>
  <tile id="44" type="goal">
   <properties>
    <property name="accepts" type="int" value="5"/>
   </properties>
+  <animation>
+   <frame tileid="44" duration="500"/>
+   <frame tileid="13" duration="500"/>
+  </animation>
  </tile>
  <tile id="52">
   <animation>

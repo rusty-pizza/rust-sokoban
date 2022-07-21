@@ -345,11 +345,11 @@ impl Level<'_> {
         });
 
         self.goals.iter_mut().for_each(|g| {
-            if let Some(c) = self
-                .crates
-                .iter_mut()
-                .find(|c| c.position() == g.position() && !c.in_hole())
-            {
+            if let Some(c) = self.crates.iter_mut().find(|c| {
+                c.position() == g.position()
+                    && !c.in_hole()
+                    && g.accepted_style().accepts(c.style())
+            }) {
                 g.set_done(true);
                 c.set_is_positioned(true);
             };

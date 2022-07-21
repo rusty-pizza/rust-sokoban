@@ -30,19 +30,9 @@ impl<'s> MapObject<'s> {
             Some("crate") => Some(MapObject::Crate(
                 Crate::new(position, tilesheet, object.gid).expect("crate creation"),
             )),
-            Some("goal") => {
-                let accepted_style = object
-                    .properties
-                    .0
-                    .get("accepts")
-                    .map(AcceptedCrateStyle::from_tiled_property)
-                    .unwrap_or_default();
-
-                Some(MapObject::Goal(
-                    Goal::new(position, accepted_style, tilesheet, object.gid)
-                        .expect("goal creation"),
-                ))
-            }
+            Some("goal") => Some(MapObject::Goal(
+                Goal::new(position, tilesheet, object.gid).expect("goal creation"),
+            )),
             _ => None,
         }
     }
