@@ -1,4 +1,4 @@
-use std::{collections::HashSet, ops::ControlFlow, path::PathBuf};
+use std::{collections::HashSet, ops::ControlFlow, path::PathBuf, time::Duration};
 
 use assets::AssetManager;
 use context::Context;
@@ -24,23 +24,21 @@ pub fn run() -> anyhow::Result<()> {
     let assets = AssetManager::load()?;
     let mut window = create_window();
     let mut sound = SoundManager::new();
-    let mut state: Box<dyn State> = Box::new(LevelSelect::new(&assets, 0));
     let mut completed_levels: HashSet<PathBuf> = HashSet::new();
+    let mut context = Context {
+        assets: &assets,
+        completed_levels: &mut completed_levels,
+        delta_time: Duration::default(),
+        sound: &mut sound,
+    };
+    let mut state: Box<dyn State> = Box::new(LevelSelect::new(&context));
 
     let mut last_frame_time = std::time::Instant::now();
-
     'outer: loop {
         let this_frame_time = std::time::Instant::now();
-        let delta_time = this_frame_time - last_frame_time;
+        context.delta_time = this_frame_time - last_frame_time;
 
-        sound.update();
-
-        let mut context = Context {
-            assets: &assets,
-            completed_levels: &mut completed_levels,
-            delta_time,
-            sound: &mut sound,
-        };
+        context.sound.update();
 
         if let ControlFlow::Break(new_state) = state.tick(&mut context, &mut window) {
             state = new_state;

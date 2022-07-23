@@ -88,24 +88,20 @@ impl<'s> State<'s> for Playing<'s> {
                         .unwrap(),
                 );
 
-                let (next_level_category, next_level_index) = if self.level_index + 1
+                let next_level_index = self.level_index + 1;
+
+                if self.level_index + 1
                     >= ctx.assets.level_categories[self.category_index].maps.len()
                 {
-                    (self.category_index + 1, 0)
+                    // Go back to level select if category or game is finished
+                    return ControlFlow::Break(Box::new(LevelSelect::new(ctx)));
                 } else {
-                    (self.category_index, self.level_index + 1)
-                };
-
-                // Go to next level
-                if next_level_category >= ctx.assets.level_categories.len() {
-                    println!("You won!");
-                    std::process::exit(0);
-                } else {
+                    // Go to next level
                     return ControlFlow::Break(Box::new(
                         Transitioning::new(
                             ctx.assets,
                             self.clone(),
-                            Playing::new(ctx.assets, next_level_index, next_level_category)
+                            Playing::new(ctx.assets, next_level_index, self.category_index)
                                 .unwrap(),
                         )
                         .unwrap(),
@@ -115,10 +111,7 @@ impl<'s> State<'s> for Playing<'s> {
             Event::KeyPressed {
                 code: Key::Escape, ..
             } => {
-                return ControlFlow::Break(Box::new(LevelSelect::new(
-                    ctx.assets,
-                    ctx.completed_levels.len(),
-                )));
+                return ControlFlow::Break(Box::new(LevelSelect::new(ctx)));
             }
             Event::KeyPressed { code: Key::R, .. } => {
                 self.level = Level::from_map(
@@ -153,7 +146,14 @@ impl<'s> State<'s> for Playing<'s> {
         target.draw_with_renderstates(&self.level, &render_states);
 
         if is_level_won {
-            let mut text = Text::new("Level complete!", &ctx.assets.win_font, 60);
+            let is_last_level_of_category =
+                self.level_index + 1 >= ctx.assets.level_categories[self.category_index].maps.len();
+            let text = if is_last_level_of_category {
+                "Category complete!"
+            } else {
+                "Level complete!"
+            };
+            let mut text = Text::new(text, &ctx.assets.win_font, 60);
             text.set_position(Vector2f::new(
                 target.size().x as f32 / 2. - text.global_bounds().width / 2.,
                 10.,

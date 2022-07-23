@@ -33,9 +33,11 @@ pub struct LevelSelect<'s> {
 }
 
 impl<'s> LevelSelect<'s> {
-    pub fn new(assets: &'s AssetManager, completed_level_count: usize) -> Self {
+    pub fn new(ctx: &Context<'s, '_, '_>) -> Self {
         let mut drawables: Vec<Box<dyn Drawable + 's>> = Vec::new();
         let mut level_arrays = Vec::new();
+        let assets = ctx.assets;
+        let completed_level_count = ctx.completed_levels.len();
 
         for object in assets.main_menu.object_groups[0].objects.iter() {
             if let ObjectShape::Text {
@@ -212,7 +214,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 });
                 window.set_view(&view);
 
-                *self = LevelSelect::new(ctx.assets, ctx.completed_levels.len());
+                *self = LevelSelect::new(ctx);
             }
 
             // Unlock all levels when Ctrl+I is pressed
@@ -227,7 +229,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                     }
                 }
 
-                *self = LevelSelect::new(ctx.assets, ctx.completed_levels.len());
+                *self = LevelSelect::new(ctx);
             }
             _ => (),
         }
