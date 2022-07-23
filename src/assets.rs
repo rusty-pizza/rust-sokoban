@@ -16,6 +16,7 @@ use crate::graphics::Tilesheet;
 
 pub const MOVE_SOUND_DIR: &str = "assets/sound/move";
 pub const UNDO_SOUND_DIR: &str = "assets/sound/undo";
+pub const UI_CLICK_SOUND_PATH: &str = "assets/sound/ui_click.ogg";
 pub const WIN_FONT_PATH: &str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
 pub const ICON_TILESHEET_PATH: &str = "assets/tilesheets/icons.tsx";
 pub const MAIN_MENU_PATH: &str = "assets/levels/main_menu.tmx";
@@ -32,6 +33,7 @@ pub struct AssetManager {
     pub icon_tilesheet: Tilesheet,
     pub walk_sounds: Vec<SfBox<SoundBuffer>>,
     pub undo_sounds: Vec<SfBox<SoundBuffer>>,
+    pub ui_click_sound: SfBox<SoundBuffer>,
     pub tilesheet: Tilesheet,
     pub win_font: SfBox<Font>,
     total_level_count: usize,
@@ -80,6 +82,8 @@ impl AssetManager {
             icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(1))?,
             total_level_count: level_categories.iter().flat_map(|c| c.maps.iter()).count(),
             level_categories,
+            ui_click_sound: SoundBuffer::from_file(UI_CLICK_SOUND_PATH)
+                .expect("could not load ui click sfx"),
             walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))
                 .expect("could not inspect the sounds directory")
                 .map(|entry| {

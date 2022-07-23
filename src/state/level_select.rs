@@ -1,6 +1,7 @@
 use std::ops::ControlFlow;
 
 use sfml::{
+    audio::{Sound, SoundSource},
     graphics::{
         BlendMode, Drawable, FloatRect, Rect, RenderStates, RenderTarget, Transform, Transformable,
     },
@@ -161,6 +162,10 @@ impl<'s> State<'s> for LevelSelect<'s> {
                         .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
                     if level_icon.global_bounds().contains(mouse_pos) {
                         if self.clicked {
+                            let mut sound = Sound::with_buffer(&ctx.assets.ui_click_sound);
+                            sound.set_volume(60.);
+                            sound.play();
+                            ctx.sound.add_sound(sound);
                             next_state = Some(Box::new(
                                 Playing::new(ctx.assets, level_idx, level_array.category).unwrap(),
                             ));
