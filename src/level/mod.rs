@@ -177,8 +177,12 @@ impl<'s> Level<'s> {
                             .icon_tilesheet
                             .tile_sprite(Gid(obj.gid.0 - map.tilesets[1].first_gid.0 + 1))
                             .expect("invalid gid found in overlay object");
-                        sprite.set_origin(Vector2f::new(0., obj.height));
-                        sprite.set_scale(Vector2f::new(obj.width, obj.height) / 100. / tile_size);
+                        sprite.set_scale(
+                            Vector2f::new(
+                                obj.width / sprite.texture_rect().width as f32,
+                                obj.height / sprite.texture_rect().height as f32,
+                            ) / tile_size,
+                        );
                         sprite.set_position(Vector2f::new(obj.x, obj.y) / tile_size);
                         sprite.set_rotation(obj.rotation);
                         sprite
@@ -341,11 +345,11 @@ impl Level<'_> {
         });
 
         self.goals.iter_mut().for_each(|g| {
-            if let Some(c) = self
-                .crates
-                .iter_mut()
-                .find(|c| c.position() == g.position() && !c.in_hole())
-            {
+            if let Some(c) = self.crates.iter_mut().find(|c| {
+                c.position() == g.position()
+                    && !c.in_hole()
+                    && g.accepted_style().accepts(c.style())
+            }) {
                 g.set_done(true);
                 c.set_is_positioned(true);
             };

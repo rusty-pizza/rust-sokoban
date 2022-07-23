@@ -22,8 +22,6 @@ pub mod state;
 pub fn run() -> anyhow::Result<()> {
     // Initialize
     let assets = AssetManager::load()?;
-    let mut current_category_idx = 0;
-    let mut current_level_idx = 0;
     let mut window = create_window();
     let mut sound = SoundManager::new();
     let mut state: Box<dyn State> = Box::new(LevelSelect::new(&assets, 0));
@@ -40,8 +38,6 @@ pub fn run() -> anyhow::Result<()> {
         let mut context = Context {
             assets: &assets,
             completed_levels: &mut completed_levels,
-            current_category_idx: &mut current_category_idx,
-            current_level_idx: &mut current_level_idx,
             delta_time,
             sound: &mut sound,
         };
@@ -61,6 +57,8 @@ pub fn run() -> anyhow::Result<()> {
                 state = new_state;
             }
         }
+
+        state.draw(&mut context, &mut window);
 
         window.display();
 

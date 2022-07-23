@@ -30,16 +30,16 @@
   <object id="12" gid="40" x="896" y="384" width="128" height="128"/>
  </objectgroup>
  <objectgroup id="6" name="overlay">
-  <object id="22" gid="170" x="140.333" y="996.333" width="100" height="100"/>
-  <object id="26" gid="180" x="210.333" y="996.333" width="100" height="100"/>
-  <object id="28" gid="160" x="210.333" y="926.333" width="100" height="100"/>
-  <object id="27" gid="190" x="280.333" y="996.333" width="100" height="100"/>
-  <object id="29" gid="215" x="449.333" y="996.333" width="100" height="100"/>
-  <object id="30" gid="225" x="519.333" y="996.333" width="100" height="100"/>
-  <object id="31" gid="195" x="519.333" y="926.333" width="100" height="100"/>
-  <object id="32" gid="205" x="589.333" y="996.333" width="100" height="100"/>
-  <object id="33" gid="297" x="388.816" y="809.194" width="177.568" height="100" rotation="101.095"/>
-  <object id="36" gid="200" x="897.334" y="985.333" width="100" height="100"/>
-  <object id="37" gid="157" x="976" y="985.333" width="100" height="100"/>
+  <object id="22" gid="170" x="174.333" y="896.33" width="100" height="100"/>
+  <object id="26" gid="180" x="244.333" y="896.33" width="100" height="100"/>
+  <object id="28" gid="160" x="244.333" y="826.33" width="100" height="100"/>
+  <object id="27" gid="190" x="314.333" y="896.33" width="100" height="100"/>
+  <object id="29" gid="215" x="483.333" y="896.33" width="100" height="100"/>
+  <object id="30" gid="225" x="553.333" y="896.33" width="100" height="100"/>
+  <object id="31" gid="195" x="553.333" y="826.33" width="100" height="100"/>
+  <object id="32" gid="205" x="623.333" y="896.33" width="100" height="100"/>
+  <object id="33" gid="297" x="526.816" y="829.19" width="177.568" height="100" rotation="101.095"/>
+  <object id="36" gid="200" x="931.334" y="896.33" width="100" height="100"/>
+  <object id="37" gid="157" x="1010" y="896.33" width="100" height="100"/>
  </objectgroup>
 </map>

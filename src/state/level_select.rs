@@ -16,7 +16,7 @@ use tiled::objects::ObjectShape;
 
 use sfml::graphics::RenderWindow;
 
-use crate::{assets::AssetManager, context::Context, level::Level};
+use crate::{assets::AssetManager, context::Context};
 
 use sfml::system::Vector2f;
 
@@ -28,6 +28,7 @@ pub struct LevelSelect<'s> {
     pub(crate) drawables: Vec<Box<dyn Drawable + 's>>,
     pub(crate) level_arrays: Vec<LevelArray>,
     pub(crate) clicked: bool,
+    level_hovered: Option<(usize, usize)>,
 }
 
 impl<'s> LevelSelect<'s> {
@@ -87,7 +88,6 @@ impl<'s> LevelSelect<'s> {
                     .main_menu
                     .tileset_by_gid(object.gid)
                     .expect("object in main menu has invalid gid");
-                let tile_size = gid_tileset.tile_width as f32;
                 let tilesheet = match gid_tileset.name.as_str() {
                     "icons" => &assets.icon_tilesheet,
                     "Sokoban" => &assets.tilesheet,
@@ -96,8 +96,10 @@ impl<'s> LevelSelect<'s> {
                 let mut sprite = tilesheet
                     .tile_sprite(Gid(object.gid.0 - gid_tileset.first_gid.0 + 1))
                     .expect("invalid gid found in overlay object");
-                //sprite.set_origin(Vector2f::new(0., object.height));
-                sprite.set_scale(Vector2f::new(object.width, object.height) / tile_size);
+                sprite.set_scale(Vector2f::new(
+                    object.width / sprite.texture_rect().width as f32,
+                    object.height / sprite.texture_rect().height as f32,
+                ));
                 sprite.set_position(Vector2f::new(object.x, object.y));
                 sprite.set_rotation(object.rotation);
                 drawables.push(Box::new(sprite));
@@ -118,6 +120,7 @@ impl<'s> LevelSelect<'s> {
             drawables,
             level_arrays,
             clicked: false,
+            level_hovered: None,
         }
     }
 }
@@ -128,15 +131,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
         ctx: &mut Context<'s, '_, '_>,
         window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
-        window.clear(
-            ctx.assets
-                .main_menu
-                .background_color
-                .map_or(Color::BLACK, |c| Color::rgb(c.red, c.green, c.blue)),
-        );
-
         let mut next_state: Option<Box<dyn State<'s> + 's>> = None;
-
         let camera_transform = camera_transform(
             window.size(),
             Vector2u::new(
@@ -144,11 +139,6 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 ctx.assets.main_menu.height * ctx.assets.main_menu.tile_height,
             ),
         );
-        let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
-
-        for drawable in self.drawables.iter() {
-            window.draw_with_renderstates(drawable.as_ref(), &render_states);
-        }
 
         for level_array in self.level_arrays.iter() {
             let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
@@ -164,7 +154,6 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 let completed_level = ctx
                     .completed_levels
                     .contains(level.source.as_ref().unwrap());
-                let mut color;
                 if completed_level || completed_previous_level {
                     let mouse_pos = window.mouse_position();
                     let mouse_pos = camera_transform
@@ -172,31 +161,14 @@ impl<'s> State<'s> for LevelSelect<'s> {
                         .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
                     if level_icon.global_bounds().contains(mouse_pos) {
                         if self.clicked {
-                            next_state = Some(Box::new(Playing {
-                                level: Level::from_map(level, &ctx.assets).unwrap(),
-                            }));
-                            *ctx.current_category_idx = level_array.category;
-                            *ctx.current_level_idx = level_idx;
+                            next_state = Some(Box::new(
+                                Playing::new(ctx.assets, level_idx, level_array.category).unwrap(),
+                            ));
                         }
 
-                        let amount_to_saturate = if sfml::window::mouse::Button::Left.is_pressed() {
-                            60
-                        } else {
-                            30
-                        };
-                        color = category.color;
-                        *color.red_mut() = color.red().saturating_add(amount_to_saturate);
-                        *color.green_mut() = color.green().saturating_add(amount_to_saturate);
-                        *color.blue_mut() = color.blue().saturating_add(amount_to_saturate);
-                    } else {
-                        color = category.color;
+                        self.level_hovered = Some((level_array.category, level_idx));
                     }
-                } else {
-                    color = category.color;
-                    *color.alpha_mut() = 50;
                 }
-                level_icon.set_color(color);
-                window.draw_with_renderstates(&level_icon, &render_states);
 
                 level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
 
@@ -256,6 +228,71 @@ impl<'s> State<'s> for LevelSelect<'s> {
         }
 
         ControlFlow::Continue(())
+    }
+
+    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget) {
+        let camera_transform = camera_transform(
+            target.size(),
+            Vector2u::new(
+                ctx.assets.main_menu.width * ctx.assets.main_menu.tile_width,
+                ctx.assets.main_menu.height * ctx.assets.main_menu.tile_height,
+            ),
+        );
+        let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
+
+        target.clear(
+            ctx.assets
+                .main_menu
+                .background_color
+                .map_or(Color::BLACK, |c| Color::rgb(c.red, c.green, c.blue)),
+        );
+
+        for drawable in self.drawables.iter() {
+            target.draw_with_renderstates(drawable.as_ref(), &render_states);
+        }
+
+        for level_array in self.level_arrays.iter() {
+            let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
+            let category = &ctx.assets.level_categories[level_array.category];
+            level_icon.set_position(Vector2f::new(level_array.rect.left, level_array.rect.top));
+            level_icon.set_scale(Vector2f::new(
+                level_array.rect.height / level_icon.global_bounds().height,
+                level_array.rect.height / level_icon.global_bounds().height,
+            ));
+
+            let mut completed_previous_level = true;
+            for (level_idx, level) in category.maps.iter().enumerate() {
+                let completed_level = ctx
+                    .completed_levels
+                    .contains(level.source.as_ref().unwrap());
+                let mut color;
+                if completed_level || completed_previous_level {
+                    if matches!(self.level_hovered, Some((x, y)) if x == level_array.category && y == level_idx)
+                    {
+                        let amount_to_saturate = if sfml::window::mouse::Button::Left.is_pressed() {
+                            60
+                        } else {
+                            30
+                        };
+                        color = category.color;
+                        *color.red_mut() = color.red().saturating_add(amount_to_saturate);
+                        *color.green_mut() = color.green().saturating_add(amount_to_saturate);
+                        *color.blue_mut() = color.blue().saturating_add(amount_to_saturate);
+                    } else {
+                        color = category.color;
+                    }
+                } else {
+                    color = category.color;
+                    *color.alpha_mut() = 50;
+                }
+                level_icon.set_color(color);
+                target.draw_with_renderstates(&level_icon, &render_states);
+
+                level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
+
+                completed_previous_level = completed_level;
+            }
+        }
     }
 }
 

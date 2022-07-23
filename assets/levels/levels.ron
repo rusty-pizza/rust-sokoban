@@ -8,8 +8,9 @@
             "tutorial/multiple_goals.tmx",
             "tutorial/manouvering.tmx",
             "tutorial/manouvering2.tmx",
-            "basic/room.tmx",
             "basic/plus.tmx",
+            "basic/room.tmx",
+            "basic/room2.tmx",
         ]
     ),
     (
@@ -25,6 +26,18 @@
             "holes/cliff.tmx",
             "holes/roundabout.tmx",
             "holes/alt_route.tmx",
+        ]
+    ),
+    (
+        name: "Colors",
+        color: 0x4ecdc4,
+        maps: [
+            "colors/tutorial.tmx",
+            "colors/swap.tmx",
+            "colors/swap2.tmx",
+            "colors/swap3.tmx",
+            "colors/swap4.tmx",
+            "colors/swap5.tmx",
         ]
     )
     // Other colors:

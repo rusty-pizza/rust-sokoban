@@ -27,6 +27,7 @@ use std::ops::ControlFlow;
 
 use sfml::graphics::RenderWindow;
 
+use crate::assets::AssetManager;
 use crate::context::Context;
 use crate::level::camera_transform;
 
@@ -34,43 +35,37 @@ use super::State;
 
 use crate::level::Level;
 
+#[derive(Clone)]
 pub struct Playing<'s> {
+    level_index: usize,
+    category_index: usize,
     pub(crate) level: Level<'s>,
+}
+
+impl<'s> Playing<'s> {
+    pub fn new(
+        assets: &'s AssetManager,
+        level_index: usize,
+        category_index: usize,
+    ) -> anyhow::Result<Self> {
+        Ok(Self {
+            level_index,
+            category_index,
+            level: Level::from_map(
+                &assets.level_categories[category_index].maps[level_index],
+                assets,
+            )?,
+        })
+    }
 }
 
 impl<'s> State<'s> for Playing<'s> {
     fn tick(
         &mut self,
         ctx: &mut Context<'s, '_, '_>,
-        window: &mut RenderWindow,
+        _window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
-        let is_level_won = self.level.is_won();
-
-        // Update
         self.level.update(ctx, ctx.delta_time);
-
-        // Render frame
-        let camera_transform = camera_transform(window.size(), self.level.tilemap().size());
-        let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
-
-        window.clear(self.level.background_color);
-
-        window.draw_with_renderstates(&self.level, &render_states);
-
-        if is_level_won {
-            let mut text = Text::new("Level complete!", &ctx.assets.win_font, 60);
-            text.set_position(Vector2f::new(
-                window.size().x as f32 / 2. - text.global_bounds().width / 2.,
-                10.,
-            ));
-            window.draw_with_renderstates(&text, &RenderStates::DEFAULT);
-            let mut subtext = Text::new("Press any key to continue", &ctx.assets.win_font, 30);
-            subtext.set_position(Vector2f::new(
-                window.size().x as f32 / 2. - subtext.global_bounds().width / 2.,
-                10. + text.global_bounds().height + 20.,
-            ));
-            window.draw_with_renderstates(&subtext, &RenderStates::DEFAULT);
-        }
 
         ControlFlow::Continue(())
     }
@@ -87,38 +82,34 @@ impl<'s> State<'s> for Playing<'s> {
             Event::KeyPressed { .. } if is_level_won => {
                 // Mark this level as complete
                 ctx.completed_levels.insert(
-                    ctx.assets.level_categories[*ctx.current_category_idx].maps
-                        [*ctx.current_level_idx]
+                    ctx.assets.level_categories[self.category_index].maps[self.level_index]
                         .source
                         .clone()
                         .unwrap(),
                 );
 
-                // Go to next level
-                *ctx.current_level_idx += 1;
-
-                if *ctx.current_level_idx
-                    >= ctx.assets.level_categories[*ctx.current_category_idx]
-                        .maps
-                        .len()
+                let (next_level_category, next_level_index) = if self.level_index + 1
+                    >= ctx.assets.level_categories[self.category_index].maps.len()
                 {
-                    *ctx.current_level_idx = 0;
-                    *ctx.current_category_idx += 1;
-                }
+                    (self.category_index + 1, 0)
+                } else {
+                    (self.category_index, self.level_index + 1)
+                };
 
-                if *ctx.current_category_idx >= ctx.assets.level_categories.len() {
+                // Go to next level
+                if next_level_category >= ctx.assets.level_categories.len() {
                     println!("You won!");
                     std::process::exit(0);
                 } else {
-                    return ControlFlow::Break(Box::new(Transitioning::new(
-                        self.level.clone(),
-                        Level::from_map(
-                            &ctx.assets.level_categories[*ctx.current_category_idx].maps
-                                [*ctx.current_level_idx],
-                            &ctx.assets,
+                    return ControlFlow::Break(Box::new(
+                        Transitioning::new(
+                            ctx.assets,
+                            self.clone(),
+                            Playing::new(ctx.assets, next_level_index, next_level_category)
+                                .unwrap(),
                         )
                         .unwrap(),
-                    )));
+                    ));
                 }
             }
             Event::KeyPressed {
@@ -131,8 +122,7 @@ impl<'s> State<'s> for Playing<'s> {
             }
             Event::KeyPressed { code: Key::R, .. } => {
                 self.level = Level::from_map(
-                    &ctx.assets.level_categories[*ctx.current_category_idx].maps
-                        [*ctx.current_level_idx],
+                    &ctx.assets.level_categories[self.category_index].maps[self.level_index],
                     &ctx.assets,
                 )
                 .unwrap()
@@ -150,5 +140,31 @@ impl<'s> State<'s> for Playing<'s> {
         }
 
         ControlFlow::Continue(())
+    }
+
+    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget) {
+        let is_level_won = self.level.is_won();
+
+        let camera_transform = camera_transform(target.size(), self.level.tilemap().size());
+        let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
+
+        target.clear(self.level.background_color);
+
+        target.draw_with_renderstates(&self.level, &render_states);
+
+        if is_level_won {
+            let mut text = Text::new("Level complete!", &ctx.assets.win_font, 60);
+            text.set_position(Vector2f::new(
+                target.size().x as f32 / 2. - text.global_bounds().width / 2.,
+                10.,
+            ));
+            target.draw_with_renderstates(&text, &RenderStates::DEFAULT);
+            let mut subtext = Text::new("Press any key to continue", &ctx.assets.win_font, 30);
+            subtext.set_position(Vector2f::new(
+                target.size().x as f32 / 2. - subtext.global_bounds().width / 2.,
+                10. + text.global_bounds().height + 20.,
+            ));
+            target.draw_with_renderstates(&subtext, &RenderStates::DEFAULT);
+        }
     }
 }
