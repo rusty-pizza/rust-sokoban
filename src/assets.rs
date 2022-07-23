@@ -16,7 +16,7 @@ use crate::graphics::Tilesheet;
 
 pub const MOVE_SOUND_DIR: &str = "assets/sound/move";
 pub const UNDO_SOUND_DIR: &str = "assets/sound/undo";
-pub const UI_CLICK_SOUND_PATH: &str = "assets/sound/ui_click.wav";
+pub const UI_CLICK_SOUND_PATH: &str = "assets/sound/ui_click.ogg";
 pub const WIN_FONT_PATH: &str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
 pub const ICON_TILESHEET_PATH: &str = "assets/tilesheets/icons.tsx";
 pub const MAIN_MENU_PATH: &str = "assets/levels/main_menu.tmx";
