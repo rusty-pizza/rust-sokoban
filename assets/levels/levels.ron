@@ -34,6 +34,10 @@
         maps: [
             "colors/tutorial.tmx",
             "colors/swap.tmx",
+            "colors/swap2.tmx",
+            "colors/swap3.tmx",
+            "colors/swap4.tmx",
+            "colors/swap5.tmx",
         ]
     )
     // Other colors:
