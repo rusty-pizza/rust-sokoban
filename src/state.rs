@@ -7,6 +7,7 @@ use sfml::{
 
 use crate::context::Context;
 
+#[derive(Clone, Copy)]
 pub struct LevelArray {
     pub rect: FloatRect,
     pub category: usize,

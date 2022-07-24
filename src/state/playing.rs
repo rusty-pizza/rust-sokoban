@@ -94,7 +94,10 @@ impl<'s> State<'s> for Playing<'s> {
                     >= ctx.assets.level_categories[self.category_index].maps.len()
                 {
                     // Go back to level select if category or game is finished
-                    return ControlFlow::Break(Box::new(LevelSelect::new(ctx)));
+                    return ControlFlow::Break(Box::new(
+                        Transitioning::new(ctx.assets, self.clone(), LevelSelect::new(ctx))
+                            .unwrap(),
+                    ));
                 } else {
                     // Go to next level
                     return ControlFlow::Break(Box::new(
@@ -111,7 +114,9 @@ impl<'s> State<'s> for Playing<'s> {
             Event::KeyPressed {
                 code: Key::Escape, ..
             } => {
-                return ControlFlow::Break(Box::new(LevelSelect::new(ctx)));
+                return ControlFlow::Break(Box::new(
+                    Transitioning::new(ctx.assets, self.clone(), LevelSelect::new(ctx)).unwrap(),
+                ));
             }
             Event::KeyPressed { code: Key::R, .. } => {
                 self.level = Level::from_map(

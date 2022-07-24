@@ -21,12 +21,34 @@ use crate::context::Context;
 
 use sfml::system::Vector2f;
 
-use super::{playing::Playing, LevelArray, State};
+use super::{playing::Playing, LevelArray, State, Transitioning};
 
 use sfml::graphics::Text;
 
+pub trait UiObject<'a>: Drawable {
+    fn as_drawable(&self) -> &dyn Drawable;
+    fn clone_dyn(&self) -> Box<dyn UiObject<'a> + 'a>;
+}
+
+impl<'a, T: Clone + Drawable + 'a> UiObject<'a> for T {
+    fn as_drawable(&self) -> &dyn Drawable {
+        self
+    }
+
+    fn clone_dyn(&self) -> Box<dyn UiObject<'a> + 'a> {
+        Box::new(self.clone())
+    }
+}
+
+impl<'a> Clone for Box<dyn UiObject<'a> + 'a> {
+    fn clone(&self) -> Self {
+        self.clone_dyn()
+    }
+}
+
+#[derive(Clone)]
 pub struct LevelSelect<'s> {
-    pub(crate) drawables: Vec<Box<dyn Drawable + 's>>,
+    pub(crate) drawables: Vec<Box<dyn UiObject<'s> + 's>>,
     pub(crate) level_arrays: Vec<LevelArray>,
     pub(crate) clicked: bool,
     level_hovered: Option<(usize, usize)>,
@@ -34,7 +56,7 @@ pub struct LevelSelect<'s> {
 
 impl<'s> LevelSelect<'s> {
     pub fn new(ctx: &Context<'s>) -> Self {
-        let mut drawables: Vec<Box<dyn Drawable + 's>> = Vec::new();
+        let mut drawables: Vec<Box<dyn UiObject + 's>> = Vec::new();
         let mut level_arrays = Vec::new();
         let assets = ctx.assets;
         let completed_level_count = ctx.completed_levels.internal_set().len();
@@ -170,7 +192,13 @@ impl<'s> State<'s> for LevelSelect<'s> {
                             sound.play();
                             ctx.sound.add_sound(sound);
                             next_state = Some(Box::new(
-                                Playing::new(ctx.assets, level_idx, level_array.category).unwrap(),
+                                Transitioning::new(
+                                    ctx.assets,
+                                    self.clone(),
+                                    Playing::new(ctx.assets, level_idx, level_array.category)
+                                        .unwrap(),
+                                )
+                                .unwrap(),
                             ));
                         }
 
@@ -257,7 +285,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
         );
 
         for drawable in self.drawables.iter() {
-            target.draw_with_renderstates(drawable.as_ref(), &render_states);
+            target.draw_with_renderstates(drawable.as_drawable(), &render_states);
         }
 
         for level_array in self.level_arrays.iter() {

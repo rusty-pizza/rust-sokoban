@@ -23,7 +23,7 @@ pub struct Transitioning<'s> {
 }
 
 impl<'s> Transitioning<'s> {
-    pub(crate) const TRANSITION_TIME: Duration = Duration::from_millis(500);
+    pub(crate) const TRANSITION_TIME: Duration = Duration::from_millis(200);
     pub(crate) fn new(
         _assets: &'s AssetManager,
         prev_state: impl State<'s> + 's,
