@@ -81,7 +81,7 @@ impl<'s> State<'s> for Playing<'s> {
         match event {
             Event::KeyPressed { .. } if is_level_won => {
                 // Mark this level as complete
-                ctx.completed_levels.insert(
+                ctx.completed_levels.complete_lvl(
                     ctx.assets.level_categories[self.category_index].maps[self.level_index]
                         .source
                         .clone()

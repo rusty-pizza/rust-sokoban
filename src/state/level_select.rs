@@ -37,7 +37,7 @@ impl<'s> LevelSelect<'s> {
         let mut drawables: Vec<Box<dyn Drawable + 's>> = Vec::new();
         let mut level_arrays = Vec::new();
         let assets = ctx.assets;
-        let completed_level_count = ctx.completed_levels.len();
+        let completed_level_count = ctx.completed_levels.internal_set().len();
 
         for object in assets.main_menu.object_groups[0].objects.iter() {
             if let ObjectShape::Text {
@@ -156,6 +156,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
             for (level_idx, level) in category.maps.iter().enumerate() {
                 let completed_level = ctx
                     .completed_levels
+                    .internal_set()
                     .contains(level.source.as_ref().unwrap());
                 if completed_level || completed_previous_level {
                     let mouse_pos = window.mouse_position();
@@ -225,7 +226,8 @@ impl<'s> State<'s> for LevelSelect<'s> {
             } => {
                 for category in ctx.assets.level_categories.iter() {
                     for level in category.maps.iter() {
-                        ctx.completed_levels.insert(level.source.clone().unwrap());
+                        ctx.completed_levels
+                            .complete_lvl(level.source.clone().unwrap());
                     }
                 }
 
@@ -271,6 +273,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
             for (level_idx, level) in category.maps.iter().enumerate() {
                 let completed_level = ctx
                     .completed_levels
+                    .internal_set()
                     .contains(level.source.as_ref().unwrap());
                 let mut color;
                 if completed_level || completed_previous_level {

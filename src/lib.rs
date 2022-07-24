@@ -1,7 +1,7 @@
 use std::{collections::HashSet, ops::ControlFlow, path::PathBuf, time::Duration};
 
 use assets::AssetManager;
-use context::Context;
+use context::{Context, LevelCompletionDb};
 
 use sfml::{
     graphics::RenderWindow,
@@ -20,11 +20,18 @@ pub mod state;
 /// Run the game, returning on failure.
 /// Will load and display the [`Level`] at [`LEVEL_PATH`].
 pub fn run() -> anyhow::Result<()> {
-    // Initialize
+    env_logger::init();
+
     let assets = AssetManager::load()?;
     let mut window = create_window();
     let mut sound = SoundManager::new();
-    let mut completed_levels: HashSet<PathBuf> = HashSet::new();
+    let mut completed_levels = match LevelCompletionDb::from_savefile() {
+        Ok(x) => x,
+        Err(err) => {
+            log::warn!("could not load savefile: {}", err);
+            Default::default()
+        }
+    };
     let mut context = Context {
         assets: &assets,
         completed_levels: &mut completed_levels,
