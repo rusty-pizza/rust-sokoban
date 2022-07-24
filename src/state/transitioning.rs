@@ -40,7 +40,7 @@ impl<'s> Transitioning<'s> {
 impl<'s> State<'s> for Transitioning<'s> {
     fn tick(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
+        ctx: &mut Context<'s>,
         _window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
         // Update time left on transition
@@ -55,14 +55,14 @@ impl<'s> State<'s> for Transitioning<'s> {
 
     fn process_event(
         &mut self,
-        _ctx: &mut Context<'s, '_, '_>,
+        _ctx: &mut Context<'s>,
         _window: &mut RenderWindow,
         _event: Event,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
         ControlFlow::Continue(())
     }
 
-    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget) {
+    fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget) {
         let mut render_target = RenderTexture::new(target.size().x, target.size().y).unwrap();
 
         self.next_state

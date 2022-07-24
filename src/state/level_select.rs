@@ -33,7 +33,7 @@ pub struct LevelSelect<'s> {
 }
 
 impl<'s> LevelSelect<'s> {
-    pub fn new(ctx: &Context<'s, '_, '_>) -> Self {
+    pub fn new(ctx: &Context<'s>) -> Self {
         let mut drawables: Vec<Box<dyn Drawable + 's>> = Vec::new();
         let mut level_arrays = Vec::new();
         let assets = ctx.assets;
@@ -131,7 +131,7 @@ impl<'s> LevelSelect<'s> {
 impl<'s> State<'s> for LevelSelect<'s> {
     fn tick(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
+        ctx: &mut Context<'s>,
         window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
         let mut next_state: Option<Box<dyn State<'s> + 's>> = None;
@@ -195,7 +195,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
 
     fn process_event(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
+        ctx: &mut Context<'s>,
         window: &mut RenderWindow,
         event: Event,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
@@ -239,7 +239,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
         ControlFlow::Continue(())
     }
 
-    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget) {
+    fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget) {
         let camera_transform = camera_transform(
             target.size(),
             Vector2u::new(

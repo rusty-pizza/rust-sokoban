@@ -24,8 +24,8 @@ pub fn run() -> anyhow::Result<()> {
 
     let assets = AssetManager::load()?;
     let mut window = create_window();
-    let mut sound = SoundManager::new();
-    let mut completed_levels = match LevelCompletionDb::from_savefile() {
+    let sound = SoundManager::new();
+    let completed_levels = match LevelCompletionDb::from_savefile() {
         Ok(x) => x,
         Err(err) => {
             log::warn!("could not load savefile: {}", err);
@@ -34,9 +34,9 @@ pub fn run() -> anyhow::Result<()> {
     };
     let mut context = Context {
         assets: &assets,
-        completed_levels: &mut completed_levels,
+        completed_levels,
         delta_time: Duration::default(),
-        sound: &mut sound,
+        sound,
     };
     let mut state: Box<dyn State> = Box::new(LevelSelect::new(&context));
 

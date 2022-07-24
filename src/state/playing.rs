@@ -62,7 +62,7 @@ impl<'s> Playing<'s> {
 impl<'s> State<'s> for Playing<'s> {
     fn tick(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
+        ctx: &mut Context<'s>,
         _window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
         self.level.update(ctx, ctx.delta_time);
@@ -72,7 +72,7 @@ impl<'s> State<'s> for Playing<'s> {
 
     fn process_event(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
+        ctx: &mut Context<'s>,
         window: &mut RenderWindow,
         event: Event,
     ) -> ControlFlow<Box<(dyn State<'s> + 's)>> {
@@ -99,9 +99,9 @@ impl<'s> State<'s> for Playing<'s> {
                     // Go to next level
                     return ControlFlow::Break(Box::new(
                         Transitioning::new(
-                            ctx.assets,
+                            &ctx.assets,
                             self.clone(),
-                            Playing::new(ctx.assets, next_level_index, self.category_index)
+                            Playing::new(&ctx.assets, next_level_index, self.category_index)
                                 .unwrap(),
                         )
                         .unwrap(),
@@ -135,7 +135,7 @@ impl<'s> State<'s> for Playing<'s> {
         ControlFlow::Continue(())
     }
 
-    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget) {
+    fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget) {
         let is_level_won = self.level.is_won();
 
         let camera_transform = camera_transform(target.size(), self.level.tilemap().size());

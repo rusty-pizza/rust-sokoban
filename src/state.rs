@@ -15,15 +15,15 @@ pub struct LevelArray {
 pub trait State<'s> {
     fn tick(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
+        ctx: &mut Context<'s>,
         window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()>;
 
-    fn draw(&self, ctx: &mut Context<'s, '_, '_>, target: &mut dyn RenderTarget);
+    fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget);
 
     fn process_event(
         &mut self,
-        ctx: &mut Context<'s, '_, '_>,
+        ctx: &mut Context<'s>,
         window: &mut RenderWindow,
         event: Event,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()>;
