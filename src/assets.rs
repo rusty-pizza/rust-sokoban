@@ -2,7 +2,11 @@
 
 #![allow(dead_code)]
 
-use std::{fs::File, path::Path};
+use std::{
+    fs::File,
+    io::{BufReader, Read},
+    path::Path,
+};
 
 use serde::Deserialize;
 use sfml::{
@@ -31,9 +35,9 @@ pub struct AssetManager {
     pub main_menu: Map,
     pub level_categories: Vec<LevelCategory>,
     pub icon_tilesheet: Tilesheet,
-    pub walk_sounds: Vec<SfBox<SoundBuffer>>,
-    pub undo_sounds: Vec<SfBox<SoundBuffer>>,
-    pub ui_click_sound: SfBox<SoundBuffer>,
+    pub walk_sounds: Vec<Vec<u8>>,
+    pub undo_sounds: Vec<Vec<u8>>,
+    pub ui_click_sound: Vec<u8>,
     pub tilesheet: Tilesheet,
     pub win_font: SfBox<Font>,
     total_level_count: usize,
@@ -76,38 +80,37 @@ impl AssetManager {
             .collect::<Result<Vec<LevelCategory>, _>>()?;
 
         let map = Map::parse_file(Path::new("assets/levels/test.tmx"))?;
+
+        let mut ui_click_sound = Vec::new();
+        File::open(UI_CLICK_SOUND_PATH)?.read_to_end(&mut ui_click_sound);
+
+        let mut walk_sounds = Vec::new();
+        for entry in std::fs::read_dir(Path::new(MOVE_SOUND_DIR))
+            .expect("could not inspect the sounds directory")
+        {
+            let mut sound = Vec::new();
+            File::open(entry?.path())?.read_to_end(&mut sound);
+            walk_sounds.push(sound);
+        }
+
+        let mut undo_sounds = Vec::new();
+        for entry in std::fs::read_dir(Path::new(UNDO_SOUND_DIR))
+            .expect("could not inspect the sounds directory")
+        {
+            let mut sound = Vec::new();
+            File::open(entry?.path())?.read_to_end(&mut sound);
+            undo_sounds.push(sound);
+        }
+
         Ok(Self {
             tilesheet: Tilesheet::from_tileset(map.tilesets[0].clone())?,
             main_menu: Map::parse_file(Path::new(MAIN_MENU_PATH))?,
             icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(1))?,
             total_level_count: level_categories.iter().flat_map(|c| c.maps.iter()).count(),
             level_categories,
-            ui_click_sound: SoundBuffer::from_file(UI_CLICK_SOUND_PATH)
-                .expect("could not load ui click sfx"),
-            walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))
-                .expect("could not inspect the sounds directory")
-                .map(|entry| {
-                    entry
-                        .expect("could not read file in sounds directory")
-                        .path()
-                })
-                .map(|path| {
-                    SoundBuffer::from_file(path.to_str().unwrap())
-                        .expect("could not read sound file")
-                })
-                .collect(),
-            undo_sounds: std::fs::read_dir(Path::new(UNDO_SOUND_DIR))
-                .expect("could not inspect the sounds directory")
-                .map(|entry| {
-                    entry
-                        .expect("could not read file in sounds directory")
-                        .path()
-                })
-                .map(|path| {
-                    SoundBuffer::from_file(path.to_str().unwrap())
-                        .expect("could not read sound file")
-                })
-                .collect(),
+            ui_click_sound,
+            walk_sounds,
+            undo_sounds,
             win_font: Font::from_file(WIN_FONT_PATH).expect("could not load win font"),
         })
     }

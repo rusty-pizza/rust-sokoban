@@ -1,28 +1,30 @@
-use sfml::audio::{Sound, SoundStatus};
+use std::io::Cursor;
 
-pub struct SoundManager<'s> {
-    sounds_being_played: Vec<Sound<'s>>,
+use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
+
+type Sound = Decoder<Cursor<Vec<u8>>>;
+
+pub struct SoundManager {
+    sounds_being_played: Vec<Sink>,
+    output_stream: OutputStreamHandle,
 }
 
-impl<'s> SoundManager<'s> {
-    pub fn new() -> Self {
-        Self {
+impl SoundManager {
+    pub fn new() -> anyhow::Result<Self> {
+        Ok(Self {
             sounds_being_played: Default::default(),
-        }
+            output_stream: OutputStream::try_default()?.1,
+        })
     }
 
-    pub fn add_sound<'k>(&'k mut self, sound: Sound<'s>) {
-        self.sounds_being_played.push(sound);
+    pub fn add_sound<'k>(&'k mut self, sound: Sound) {
+        let mut sink = Sink::try_new(&self.output_stream).unwrap();
+        sink.append(sound);
+
+        self.sounds_being_played.push(sink);
     }
 
     pub fn update(&mut self) {
-        self.sounds_being_played
-            .retain(|sound| sound.status() == SoundStatus::PLAYING);
-    }
-}
-
-impl<'s> Default for SoundManager<'s> {
-    fn default() -> Self {
-        Self::new()
+        self.sounds_being_played.retain(|sink| !sink.empty());
     }
 }
