@@ -17,7 +17,7 @@ use tiled::objects::ObjectShape;
 
 use sfml::graphics::RenderWindow;
 
-use crate::{assets::AssetManager, context::Context};
+use crate::context::Context;
 
 use sfml::system::Vector2f;
 

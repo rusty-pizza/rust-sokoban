@@ -1,12 +1,7 @@
-use std::{
-    collections::HashSet,
-    fs::File,
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::{collections::HashSet, fs::File, path::PathBuf, time::Duration};
 
 use directories::ProjectDirs;
-use serde::{ser::SerializeTuple, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{assets::AssetManager, sound_manager::SoundManager};
 

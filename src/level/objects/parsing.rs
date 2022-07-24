@@ -3,7 +3,7 @@ use tiled::map::Map;
 
 use crate::graphics::Tilesheet;
 
-use super::{AcceptedCrateStyle, Crate, Goal};
+use super::{Crate, Goal};
 
 pub enum MapObject<'s> {
     Spawn { position: Vector2i },

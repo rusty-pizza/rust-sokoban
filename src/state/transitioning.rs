@@ -2,33 +2,17 @@ use sfml::graphics::Color;
 use sfml::graphics::Rect;
 use sfml::graphics::RenderTarget;
 use sfml::graphics::RenderTexture;
-use sfml::graphics::Shape;
+use sfml::graphics::RenderWindow;
 use sfml::graphics::Sprite;
-use sfml::graphics::Transformable;
 use sfml::window::Event;
 
-use sfml::system::Vector2f;
-
-use sfml::graphics::RectangleShape;
-
-use sfml::graphics::BlendMode;
-
-use sfml::graphics::RenderStates;
-
 use std::ops::ControlFlow;
-
-use sfml::graphics::RenderWindow;
+use std::time::Duration;
 
 use crate::assets::AssetManager;
 use crate::context::Context;
-use crate::level::camera_transform;
 
-use super::Playing;
 use super::State;
-
-use std::time::Duration;
-
-use crate::level::Level;
 
 // TODO: Make it transition between states (Requires separating State.tick into update & draw)
 pub struct Transitioning<'s> {
@@ -41,7 +25,7 @@ pub struct Transitioning<'s> {
 impl<'s> Transitioning<'s> {
     pub(crate) const TRANSITION_TIME: Duration = Duration::from_millis(500);
     pub(crate) fn new(
-        assets: &'s AssetManager,
+        _assets: &'s AssetManager,
         prev_state: impl State<'s> + 's,
         next_state: impl State<'s> + 's,
     ) -> anyhow::Result<Self> {

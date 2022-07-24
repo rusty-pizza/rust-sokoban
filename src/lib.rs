@@ -1,4 +1,4 @@
-use std::{collections::HashSet, ops::ControlFlow, path::PathBuf, time::Duration};
+use std::{ops::ControlFlow, time::Duration};
 
 use assets::AssetManager;
 use context::{Context, LevelCompletionDb};
