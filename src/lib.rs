@@ -16,6 +16,7 @@ pub mod graphics;
 pub mod level;
 pub mod sound_manager;
 pub mod state;
+pub mod ui;
 
 /// Run the game, returning on failure.
 /// Will load and display the [`Level`] at [`LEVEL_PATH`].
@@ -38,7 +39,7 @@ pub fn run() -> anyhow::Result<()> {
         delta_time: Duration::default(),
         sound,
     };
-    let mut state: Box<dyn State> = Box::new(LevelSelect::new(&context));
+    let mut state: Box<dyn State> = Box::new(LevelSelect::new(&context)?);
 
     let mut last_frame_time = std::time::Instant::now();
     'outer: loop {

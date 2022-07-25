@@ -73,6 +73,7 @@ pub struct Crate<'s> {
     sprite_atlas: SpriteAtlas<'s>,
     style: CrateStyle,
     in_hole: bool,
+    grid_size: Vector2f,
 }
 
 impl<'s> Crate<'s> {
@@ -81,7 +82,12 @@ impl<'s> Crate<'s> {
     const POSITIONED_FRAME: usize = 2;
     const TRANSLUCENT_ALPHA: u8 = 150;
 
-    pub fn new(position: Vector2i, tilesheet: &'s Tilesheet, gid: Gid) -> Option<Self> {
+    pub fn new(
+        position: Vector2i,
+        tilesheet: &'s Tilesheet,
+        gid: Gid,
+        grid_size: Vector2f,
+    ) -> Option<Self> {
         let tile = tilesheet.tileset().get_tile_by_gid(gid)?;
 
         let crate_type = match tile.properties.0.get("style") {
@@ -105,11 +111,8 @@ impl<'s> Crate<'s> {
                 tilesheet.texture(),
                 &[normal_tex_rect, dropped_tex_rect, positioned_tex_rect],
             );
-            sprite_atlas.set_position(Vector2f::new(position.x as f32, position.y as f32));
-            sprite_atlas.set_scale(Vector2f::new(
-                1f32 / tilesheet.tile_size().x as f32,
-                1f32 / tilesheet.tile_size().y as f32,
-            ));
+            sprite_atlas
+                .set_position(Vector2f::new(position.x as f32, position.y as f32) * grid_size);
             sprite_atlas
         };
 
@@ -118,6 +121,7 @@ impl<'s> Crate<'s> {
             style: crate_type,
             sprite_atlas,
             in_hole: false,
+            grid_size,
         })
     }
 
@@ -128,7 +132,7 @@ impl<'s> Crate<'s> {
     pub fn set_position(&mut self, position: Vector2i) {
         self.position = position;
         self.sprite_atlas
-            .set_position(Vector2f::new(position.x as f32, position.y as f32));
+            .set_position(Vector2f::new(position.x as f32, position.y as f32) * self.grid_size);
     }
 
     pub fn in_hole(&self) -> bool {
@@ -192,7 +196,12 @@ impl<'s> Goal<'s> {
     const PENDING_FRAME: usize = 0;
     const DONE_FRAME: usize = 1;
 
-    pub fn new(position: Vector2i, tilesheet: &'s Tilesheet, gid: Gid) -> anyhow::Result<Self> {
+    pub fn new(
+        position: Vector2i,
+        tilesheet: &'s Tilesheet,
+        gid: Gid,
+        grid_size: Vector2f,
+    ) -> anyhow::Result<Self> {
         let tile = tilesheet
             .tileset()
             .get_tile_by_gid(gid)
@@ -225,11 +234,8 @@ impl<'s> Goal<'s> {
                 tilesheet.texture(),
                 &[pending_tex_rect, done_tex_rect],
             );
-            sprite_atlas.set_position(Vector2f::new(position.x as f32, position.y as f32));
-            sprite_atlas.set_scale(Vector2f::new(
-                1f32 / tilesheet.tile_size().x as f32,
-                1f32 / tilesheet.tile_size().y as f32,
-            ));
+            sprite_atlas
+                .set_position(Vector2f::new(position.x as f32, position.y as f32) * grid_size);
             sprite_atlas
         };
 

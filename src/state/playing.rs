@@ -6,6 +6,7 @@ use sfml::graphics::RenderTarget;
 
 use sfml::graphics::Transformable;
 
+use sfml::system::Vector2u;
 use sfml::window::Key;
 
 use super::transitioning::Transitioning;
@@ -27,7 +28,6 @@ use std::ops::ControlFlow;
 
 use sfml::graphics::RenderWindow;
 
-use crate::assets::AssetManager;
 use crate::context::Context;
 use crate::level::camera_transform;
 
@@ -44,7 +44,7 @@ pub struct Playing<'s> {
 
 impl<'s> Playing<'s> {
     pub fn new(
-        assets: &'s AssetManager,
+        ctx: &Context<'s>,
         level_index: usize,
         category_index: usize,
     ) -> anyhow::Result<Self> {
@@ -52,8 +52,8 @@ impl<'s> Playing<'s> {
             level_index,
             category_index,
             level: Level::from_map(
-                &assets.level_categories[category_index].maps[level_index],
-                assets,
+                &ctx.assets.level_categories[category_index].maps[level_index],
+                ctx,
             )?,
         })
     }
@@ -95,8 +95,12 @@ impl<'s> State<'s> for Playing<'s> {
                 {
                     // Go back to level select if category or game is finished
                     return ControlFlow::Break(Box::new(
-                        Transitioning::new(ctx.assets, self.clone(), LevelSelect::new(ctx))
-                            .unwrap(),
+                        Transitioning::new(
+                            ctx.assets,
+                            self.clone(),
+                            LevelSelect::new(ctx).unwrap(),
+                        )
+                        .unwrap(),
                     ));
                 } else {
                     // Go to next level
@@ -104,8 +108,7 @@ impl<'s> State<'s> for Playing<'s> {
                         Transitioning::new(
                             ctx.assets,
                             self.clone(),
-                            Playing::new(ctx.assets, next_level_index, self.category_index)
-                                .unwrap(),
+                            Playing::new(ctx, next_level_index, self.category_index).unwrap(),
                         )
                         .unwrap(),
                     ));
@@ -115,13 +118,14 @@ impl<'s> State<'s> for Playing<'s> {
                 code: Key::Escape, ..
             } => {
                 return ControlFlow::Break(Box::new(
-                    Transitioning::new(ctx.assets, self.clone(), LevelSelect::new(ctx)).unwrap(),
+                    Transitioning::new(ctx.assets, self.clone(), LevelSelect::new(ctx).unwrap())
+                        .unwrap(),
                 ));
             }
             Event::KeyPressed { code: Key::R, .. } => {
                 self.level = Level::from_map(
                     &ctx.assets.level_categories[self.category_index].maps[self.level_index],
-                    ctx.assets,
+                    ctx,
                 )
                 .unwrap()
             }
@@ -143,7 +147,15 @@ impl<'s> State<'s> for Playing<'s> {
     fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget) {
         let is_level_won = self.level.is_won();
 
-        let camera_transform = camera_transform(target.size(), self.level.tilemap().size());
+        let camera_transform = camera_transform(
+            target.size(),
+            Vector2u::new(
+                // HACK: This should refer to the level tile_width/height, but it refers to the tilesheet tilesize, which might not always coincide
+                self.level.tilemap().size().x * self.level.tilesheet().tile_size().x,
+                self.level.tilemap().size().y * self.level.tilesheet().tile_size().y,
+            ),
+            self.level.tilesheet().tile_size().y as f32 * 2.,
+        );
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
         target.clear(self.level.background_color);

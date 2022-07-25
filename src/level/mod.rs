@@ -12,7 +12,7 @@ pub mod tilemap;
 use rand::{prelude::SliceRandom, thread_rng};
 use sfml::{
     audio::{Sound, SoundSource},
-    graphics::{Color, Drawable, PrimitiveType, Sprite, Transform, Transformable, Vertex},
+    graphics::{Color, Drawable, PrimitiveType, Transform, Vertex},
     system::{Vector2f, Vector2i, Vector2u},
     window::{Event, Key},
 };
@@ -23,9 +23,9 @@ use tiled::{
 };
 
 use crate::{
-    assets::AssetManager,
     context::Context,
     graphics::{QuadMeshable, Tilesheet},
+    ui::{get_ui_obj_from_tiled_obj, UiObject},
 };
 
 pub use self::error::LevelLoadError;
@@ -95,7 +95,7 @@ fn play_undo_sound(context: &mut Context) {
 /// Represents a sokoban level or puzzle.
 #[derive(Clone)]
 pub struct Level<'s> {
-    overlay: Vec<Sprite<'s>>,
+    overlay: Vec<Box<dyn UiObject<'s> + 's>>,
     player_spawn: Vector2i,
     crates: Vec<Crate<'s>>,
     goals: Vec<Goal<'s>>,
@@ -110,10 +110,12 @@ pub struct Level<'s> {
 /// Constructors & parsing-related functions
 impl<'s> Level<'s> {
     /// Load a sokoban level from a Tiled map and its tilesheet.
-    pub fn from_map(map: &Map, assets: &'s AssetManager) -> Result<Level<'s>, LevelLoadError> {
+    pub fn from_map(map: &Map, ctx: &Context<'s>) -> Result<Level<'s>, LevelLoadError> {
         if map.infinite {
             return Err(LevelLoadError::NotFinite);
         }
+
+        let assets = ctx.assets;
 
         let size = Vector2u::new(map.width, map.height);
 
@@ -151,42 +153,31 @@ impl<'s> Level<'s> {
             )
         };
 
-        let player = Player::new(player_spawn, &assets.tilesheet).expect("constructing player");
+        let grid_size = Vector2f::new(map.tile_width as f32, map.tile_height as f32);
+        let player =
+            Player::new(player_spawn, &assets.tilesheet, grid_size).expect("constructing player");
 
         let background_color = map
             .background_color
             .map(|c| Color::rgb(c.red, c.green, c.blue))
             .unwrap_or(Color::BLACK);
 
-        let vertices =
-            Self::generate_vertices(&size, &building_layer, &floor_layer, &assets.tilesheet);
+        let vertices = Self::generate_vertices(
+            &size,
+            &building_layer,
+            &floor_layer,
+            &assets.tilesheet,
+            grid_size,
+        );
 
         let overlay = map
             .object_groups
             .iter()
             .find(|o| o.name == "overlay")
             .map_or(vec![], |o| {
-                let tile_size = Vector2f::new(
-                    assets.tilesheet.tile_size().x as f32,
-                    assets.tilesheet.tile_size().y as f32,
-                );
                 o.objects
                     .iter()
-                    .map(|obj| {
-                        let mut sprite = assets
-                            .icon_tilesheet
-                            .tile_sprite(Gid(obj.gid.0 - map.tilesets[1].first_gid.0 + 1))
-                            .expect("invalid gid found in overlay object");
-                        sprite.set_scale(
-                            Vector2f::new(
-                                obj.width / sprite.texture_rect().width as f32,
-                                obj.height / sprite.texture_rect().height as f32,
-                            ) / tile_size,
-                        );
-                        sprite.set_position(Vector2f::new(obj.x, obj.y) / tile_size);
-                        sprite.set_rotation(obj.rotation);
-                        sprite
-                    })
+                    .map(|object| get_ui_obj_from_tiled_obj(ctx, map, object).unwrap())
                     .collect()
             });
 
@@ -224,6 +215,7 @@ impl<'s> Level<'s> {
         building_layer: &[LayerTile],
         floor_layer: &[LayerTile],
         tilesheet: &Tilesheet,
+        grid_size: Vector2f,
     ) -> Vec<Vertex> {
         const FLOOR_OFFSET: Vector2f = Vector2f::new(0.5f32, 0.5f32);
         const TILE_DILATION: f32 = 0.01;
@@ -238,8 +230,8 @@ impl<'s> Level<'s> {
             );
             if f_tile.gid != Gid::EMPTY {
                 vertices.add_quad(
-                    position + FLOOR_OFFSET - TILE_DILATION,
-                    1f32 + TILE_DILATION * 2.,
+                    (position + FLOOR_OFFSET - TILE_DILATION) * grid_size,
+                    (1f32 + TILE_DILATION * 2.) * grid_size,
                     tilesheet
                         .tile_uv(f_tile.gid)
                         .expect("obtaining floor tile UV"),
@@ -247,8 +239,8 @@ impl<'s> Level<'s> {
             }
             if b_tile.gid != Gid::EMPTY {
                 vertices.add_quad(
-                    position - TILE_DILATION,
-                    1f32 + TILE_DILATION * 2.,
+                    (position - TILE_DILATION) * grid_size,
+                    (1f32 + TILE_DILATION * 2.) * grid_size,
                     tilesheet
                         .tile_uv(b_tile.gid)
                         .expect("obtaining building tile UV"),
@@ -257,6 +249,10 @@ impl<'s> Level<'s> {
         }
 
         vertices
+    }
+
+    pub fn tilesheet(&self) -> &Tilesheet {
+        self.tilesheet
     }
 }
 
@@ -424,18 +420,18 @@ impl<'s> Drawable for Level<'s> {
 
         target.draw_with_renderstates(&self.player, states);
 
-        for sprite in self.overlay.iter() {
-            target.draw_with_renderstates(sprite, states);
+        for element in self.overlay.iter() {
+            target.draw_with_renderstates(element.as_drawable(), states);
         }
     }
 }
 
-pub fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform {
-    const WINDOW_VERTICAL_PADDING: f32 = 2.; // In tiles
-    let map_size = Vector2f::new(
-        map_size.x as f32,
-        map_size.y as f32 + WINDOW_VERTICAL_PADDING,
-    );
+pub fn camera_transform(
+    window_size: Vector2u,
+    map_size: Vector2u,
+    vertical_padding: f32,
+) -> Transform {
+    let map_size = Vector2f::new(map_size.x as f32, map_size.y as f32 + vertical_padding);
     let window_size = Vector2f::new(window_size.x as f32, window_size.y as f32);
     let viewport_size = Vector2f::new(window_size.x, window_size.y);
 
@@ -454,6 +450,6 @@ pub fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform 
         (map_px_size.y - viewport_size.y) / 2f32 + (viewport_size.y - window_size.y) / 2f32,
     );
     let tile = map_px_size.y / map_size.y as f32;
-    x.translate(0., -tile * WINDOW_VERTICAL_PADDING / 2.);
+    x.translate(0., -tile * vertical_padding / 2.);
     x.inverse()
 }

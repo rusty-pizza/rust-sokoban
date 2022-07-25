@@ -54,6 +54,10 @@ impl<'t> SpriteAtlas<'t> {
         self.current_frame
     }
 
+    pub fn frame_rect(&self, frame: usize) -> Option<IntRect> {
+        self.frames.get(frame).copied()
+    }
+
     pub fn set_frame(&mut self, frame: usize) -> Result<(), SetFrameError> {
         if let Some(rect) = self.frames.get(frame) {
             self.current_frame = frame;

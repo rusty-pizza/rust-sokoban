@@ -14,10 +14,11 @@ pub struct Player<'s> {
     position: Vector2i,
     atlas: SpriteAtlas<'s>,
     direction: Direction,
+    grid_size: Vector2f,
 }
 
 impl Player<'_> {
-    pub fn new(position: Vector2i, tilesheet: &Tilesheet) -> Option<Player> {
+    pub fn new(position: Vector2i, tilesheet: &Tilesheet, grid_size: Vector2f) -> Option<Player> {
         let texture = tilesheet.texture();
 
         let get_rect = |property_name: &str| -> Option<Rect<i32>> {
@@ -39,17 +40,14 @@ impl Player<'_> {
             &[north_frame, south_frame, east_frame, west_frame],
         );
 
-        atlas.set_position(Vector2f::new(position.x as f32, position.y as f32));
-        atlas.set_scale(Vector2f::new(
-            1f32 / tilesheet.tile_size().x as f32,
-            1f32 / tilesheet.tile_size().y as f32,
-        ));
+        atlas.set_position(Vector2f::new(position.x as f32, position.y as f32) * grid_size);
         atlas.set_frame(Direction::South as usize).unwrap();
 
         Some(Player {
             position,
             atlas,
             direction: Direction::South,
+            grid_size,
         })
     }
 
@@ -61,7 +59,7 @@ impl Player<'_> {
     pub fn set_position(&mut self, position: Vector2i) {
         self.position = position;
         self.atlas
-            .set_position(Vector2f::new(position.x as f32, position.y as f32));
+            .set_position(Vector2f::new(position.x as f32, position.y as f32) * self.grid_size);
     }
 
     pub fn position(&self) -> Vector2i {

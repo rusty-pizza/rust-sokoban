@@ -1,4 +1,4 @@
-use sfml::system::Vector2i;
+use sfml::system::{Vector2f, Vector2i};
 use tiled::map::Map;
 
 use crate::graphics::Tilesheet;
@@ -25,13 +25,15 @@ impl<'s> MapObject<'s> {
         let object_tile = tilesheet.tileset().get_tile_by_gid(object.gid);
         let object_type = object_tile.and_then(|t| t.tile_type.as_deref());
 
+        let grid_size = Vector2f::new(map.tile_width as f32, map.tile_height as f32);
+
         match object_type {
             Some("spawn") => Some(MapObject::Spawn { position }),
             Some("crate") => Some(MapObject::Crate(
-                Crate::new(position, tilesheet, object.gid).expect("crate creation"),
+                Crate::new(position, tilesheet, object.gid, grid_size).expect("crate creation"),
             )),
             Some("goal") => Some(MapObject::Goal(
-                Goal::new(position, tilesheet, object.gid).expect("goal creation"),
+                Goal::new(position, tilesheet, object.gid, grid_size).expect("goal creation"),
             )),
             _ => None,
         }
