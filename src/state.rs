@@ -1,19 +1,14 @@
 use std::ops::ControlFlow;
 
 use sfml::{
-    graphics::{FloatRect, RenderTarget, RenderWindow},
+    graphics::{RenderTarget, RenderWindow},
     window::Event,
 };
 
 use crate::context::Context;
 
-#[derive(Clone, Copy)]
-pub struct LevelArray {
-    pub rect: FloatRect,
-    pub category: usize,
-}
-
 pub trait State<'s> {
+    // Sadly this function cannot move `self` because that would make it object unsafe
     fn tick(
         &mut self,
         ctx: &mut Context<'s>,

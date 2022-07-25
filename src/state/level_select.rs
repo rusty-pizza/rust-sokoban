@@ -21,9 +21,15 @@ use crate::context::Context;
 
 use sfml::system::Vector2f;
 
-use super::{playing::Playing, LevelArray, State, Transitioning};
+use super::{playing::Playing, State, Transitioning};
 
 use sfml::graphics::Text;
+
+#[derive(Clone, Copy)]
+pub struct LevelArray {
+    pub rect: FloatRect,
+    pub category: usize,
+}
 
 pub trait UiObject<'a>: Drawable {
     fn as_drawable(&self) -> &dyn Drawable;
@@ -48,9 +54,9 @@ impl<'a> Clone for Box<dyn UiObject<'a> + 'a> {
 
 #[derive(Clone)]
 pub struct LevelSelect<'s> {
-    pub(crate) drawables: Vec<Box<dyn UiObject<'s> + 's>>,
-    pub(crate) level_arrays: Vec<LevelArray>,
-    pub(crate) clicked: bool,
+    drawables: Vec<Box<dyn UiObject<'s> + 's>>,
+    level_arrays: Vec<LevelArray>,
+    clicked: bool,
     level_hovered: Option<(usize, usize)>,
 }
 

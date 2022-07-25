@@ -39,7 +39,7 @@ use crate::level::Level;
 pub struct Playing<'s> {
     level_index: usize,
     category_index: usize,
-    pub(crate) level: Level<'s>,
+    level: Level<'s>,
 }
 
 impl<'s> Playing<'s> {
@@ -102,9 +102,9 @@ impl<'s> State<'s> for Playing<'s> {
                     // Go to next level
                     return ControlFlow::Break(Box::new(
                         Transitioning::new(
-                            &ctx.assets,
+                            ctx.assets,
                             self.clone(),
-                            Playing::new(&ctx.assets, next_level_index, self.category_index)
+                            Playing::new(ctx.assets, next_level_index, self.category_index)
                                 .unwrap(),
                         )
                         .unwrap(),
@@ -121,7 +121,7 @@ impl<'s> State<'s> for Playing<'s> {
             Event::KeyPressed { code: Key::R, .. } => {
                 self.level = Level::from_map(
                     &ctx.assets.level_categories[self.category_index].maps[self.level_index],
-                    &ctx.assets,
+                    ctx.assets,
                 )
                 .unwrap()
             }

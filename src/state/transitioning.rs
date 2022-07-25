@@ -14,17 +14,16 @@ use crate::context::Context;
 
 use super::State;
 
-// TODO: Make it transition between states (Requires separating State.tick into update & draw)
 pub struct Transitioning<'s> {
-    pub(crate) prev_state: Box<dyn State<'s> + 's>,
+    prev_state: Box<dyn State<'s> + 's>,
     // HACK: This is an option because `tick` does not move the state and as such we cannot move the next state out
-    pub(crate) next_state: Option<Box<dyn State<'s> + 's>>,
-    pub(crate) time_left: Duration,
+    next_state: Option<Box<dyn State<'s> + 's>>,
+    time_left: Duration,
 }
 
 impl<'s> Transitioning<'s> {
-    pub(crate) const TRANSITION_TIME: Duration = Duration::from_millis(200);
-    pub(crate) fn new(
+    const TRANSITION_TIME: Duration = Duration::from_millis(200);
+    pub fn new(
         _assets: &'s AssetManager,
         prev_state: impl State<'s> + 's,
         next_state: impl State<'s> + 's,
