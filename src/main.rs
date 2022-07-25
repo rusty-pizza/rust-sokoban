@@ -1,5 +1,5 @@
 fn main() {
     if let Err(err) = sokoban::run() {
-        println!("{}", err)
+        println!("Fatal error: {}", err)
     }
 }
