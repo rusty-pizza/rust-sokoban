@@ -4,11 +4,11 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Default)]
-pub struct LevelCompletionDb {
+pub struct SaveData {
     set: HashSet<PathBuf>,
 }
 
-impl LevelCompletionDb {
+impl SaveData {
     pub fn from_savefile() -> anyhow::Result<Self> {
         Ok(ron::de::from_reader::<_, Self>(File::open(
             Self::save_file_path(),

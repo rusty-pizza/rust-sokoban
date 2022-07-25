@@ -1,7 +1,7 @@
 use std::{ops::ControlFlow, time::Duration};
 
 use assets::AssetManager;
-use context::{Context, LevelCompletionDb};
+use context::{Context, SaveData};
 
 use sfml::{
     graphics::RenderWindow,
@@ -25,7 +25,7 @@ pub fn run() -> anyhow::Result<()> {
     let assets = AssetManager::load()?;
     let mut window = create_window();
     let sound = SoundManager::new();
-    let completed_levels = match LevelCompletionDb::from_savefile() {
+    let completed_levels = match SaveData::from_savefile() {
         Ok(x) => x,
         Err(err) => {
             log::warn!("could not load savefile: {}", err);
