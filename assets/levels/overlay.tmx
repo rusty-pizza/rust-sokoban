@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="100" tileheight="100" infinite="0" backgroundcolor="#1e1e1e" nextlayerid="3" nextobjectid="28">
+ <tileset firstgid="1" source="../tilesheets/icons.tsx"/>
+ <objectgroup id="1" name="overlay">
+  <object id="12" gid="111" x="10" y="10" width="100" height="100" name="back_button"/>
+  <!--<object id="14" x="10" y="110" width="100" height="100.333">
+   <text fontfamily="Varela Round" pixelsize="34" wrap="1" color="#ffffff" halign="center">Back</text>
+  </object>-->
+ </objectgroup>
+</map>

@@ -1,9 +1,13 @@
+use sfml::audio::Sound;
+use sfml::audio::SoundSource;
+use sfml::graphics::Color;
 use sfml::graphics::Rect;
 
 use sfml;
 
 use sfml::graphics::RenderTarget;
 
+use sfml::graphics::Sprite;
 use sfml::graphics::Transformable;
 
 use sfml::system::Vector2u;
@@ -30,16 +34,27 @@ use sfml::graphics::RenderWindow;
 
 use crate::context::Context;
 use crate::level::camera_transform;
+use crate::ui::get_ui_obj_from_tiled_obj;
+use crate::ui::sprite_from_tiled_obj;
+use crate::ui::UiObject;
 
 use super::State;
 
 use crate::level::Level;
 
 #[derive(Clone)]
+pub struct PlayOverlay<'s> {
+    overlay: Vec<Box<dyn UiObject<'s> + 's>>,
+    back_button: Sprite<'s>,
+}
+
+#[derive(Clone)]
 pub struct Playing<'s> {
     level_index: usize,
     category_index: usize,
     level: Level<'s>,
+    overlay: PlayOverlay<'s>,
+    clicked: bool,
 }
 
 impl<'s> Playing<'s> {
@@ -48,6 +63,22 @@ impl<'s> Playing<'s> {
         level_index: usize,
         category_index: usize,
     ) -> anyhow::Result<Self> {
+        let mut overlay = Vec::new();
+        let mut back_button = None;
+        for object in ctx.assets.play_overlay_map.object_groups[0].objects.iter() {
+            if object.name == "back_button" {
+                let sprite =
+                    sprite_from_tiled_obj(ctx.assets, &ctx.assets.play_overlay_map, object)?;
+                back_button = Some(sprite);
+            } else if let Ok(obj) =
+                get_ui_obj_from_tiled_obj(ctx, &ctx.assets.play_overlay_map, object)
+            {
+                overlay.push(obj);
+            } else {
+                log::warn!("could not parse object in play overlay: {:?}", object);
+            }
+        }
+
         Ok(Self {
             level_index,
             category_index,
@@ -55,6 +86,11 @@ impl<'s> Playing<'s> {
                 &ctx.assets.level_categories[category_index].maps[level_index],
                 ctx,
             )?,
+            overlay: PlayOverlay {
+                overlay,
+                back_button: back_button.expect("found no back button in play overlay"),
+            },
+            clicked: false,
         })
     }
 }
@@ -63,9 +99,45 @@ impl<'s> State<'s> for Playing<'s> {
     fn tick(
         &mut self,
         ctx: &mut Context<'s>,
-        _window: &mut RenderWindow,
+        window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
+        let transform = camera_transform(
+            window.size(),
+            Vector2u::new(
+                ctx.assets.play_overlay_map.width * ctx.assets.play_overlay_map.tile_width,
+                ctx.assets.play_overlay_map.height * ctx.assets.play_overlay_map.tile_height,
+            ),
+            0.,
+        );
         self.level.update(ctx, ctx.delta_time);
+
+        let mouse_pos = window.mouse_position();
+        let mouse_pos = transform
+            .inverse()
+            .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
+
+        if self.overlay.back_button.global_bounds().contains(mouse_pos) {
+            self.overlay
+                .back_button
+                .set_color(Color::rgb(0xde, 0xde, 0xde));
+
+            if self.clicked {
+                let mut sound = Sound::with_buffer(&ctx.assets.ui_click_sound);
+                sound.set_volume(60.);
+                sound.play();
+                ctx.sound.add_sound(sound);
+                return ControlFlow::Break(Box::new(
+                    Transitioning::new(ctx.assets, self.clone(), LevelSelect::new(ctx).unwrap())
+                        .unwrap(),
+                ));
+            }
+        } else {
+            self.overlay
+                .back_button
+                .set_color(Color::rgb(0xff, 0xff, 0xff));
+        }
+
+        self.clicked = false;
 
         ControlFlow::Continue(())
     }
@@ -79,6 +151,13 @@ impl<'s> State<'s> for Playing<'s> {
         let is_level_won = self.level.is_won();
 
         match event {
+            Event::MouseButtonReleased {
+                button: sfml::window::mouse::Button::Left,
+                ..
+            } => {
+                self.clicked = true;
+            }
+
             Event::KeyPressed { .. } if is_level_won => {
                 // Mark this level as complete
                 ctx.completed_levels.complete_lvl(
@@ -147,7 +226,7 @@ impl<'s> State<'s> for Playing<'s> {
     fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget) {
         let is_level_won = self.level.is_won();
 
-        let camera_transform = camera_transform(
+        let transform = camera_transform(
             target.size(),
             Vector2u::new(
                 // HACK: This should refer to the level tile_width/height, but it refers to the tilesheet tilesize, which might not always coincide
@@ -156,7 +235,7 @@ impl<'s> State<'s> for Playing<'s> {
             ),
             self.level.tilesheet().tile_size().y as f32 * 2.,
         );
-        let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
+        let render_states = RenderStates::new(BlendMode::ALPHA, transform, None, None);
 
         target.clear(self.level.background_color);
 
@@ -183,5 +262,20 @@ impl<'s> State<'s> for Playing<'s> {
             ));
             target.draw_with_renderstates(&subtext, &RenderStates::DEFAULT);
         }
+
+        let transform = camera_transform(
+            target.size(),
+            Vector2u::new(
+                ctx.assets.play_overlay_map.width * ctx.assets.play_overlay_map.tile_width,
+                ctx.assets.play_overlay_map.height * ctx.assets.play_overlay_map.tile_height,
+            ),
+            0.,
+        );
+        let render_states = RenderStates::new(BlendMode::ALPHA, transform, None, None);
+
+        for obj in self.overlay.overlay.iter() {
+            target.draw_with_renderstates(obj.as_drawable(), &render_states);
+        }
+        target.draw_with_renderstates(&self.overlay.back_button, &render_states);
     }
 }

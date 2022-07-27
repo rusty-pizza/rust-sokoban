@@ -1,10 +1,11 @@
 use sfml::{
-    graphics::{Color, Drawable, Text, Transformable},
+    graphics::{Color, Drawable, Sprite, Text, Transformable},
     system::Vector2f,
 };
+use thiserror::Error;
 use tiled::{objects::ObjectShape, tile::Gid};
 
-use crate::context::Context;
+use crate::{assets::AssetManager, context::Context};
 
 pub trait UiObject<'a>: Drawable {
     fn as_drawable(&self) -> &dyn Drawable;
@@ -83,28 +84,48 @@ pub fn get_ui_obj_from_tiled_obj<'s>(
 
         Ok(Box::new(text))
     } else if object.gid != Gid::EMPTY {
-        let gid_tileset = map
-            .tileset_by_gid(object.gid)
-            .expect("object in main menu has invalid gid");
-        let tilesheet = match gid_tileset.name.as_str() {
-            "icons" => &assets.icon_tilesheet,
-            "Sokoban" => &assets.tilesheet,
-            _ => panic!("invalid tilesheet name for tile object found in main menu"),
-        };
-        let mut sprite = tilesheet
-            .tile_sprite(Gid(object.gid.0 - gid_tileset.first_gid.0 + 1))
-            .expect("invalid gid found in overlay object");
-        sprite.set_scale(Vector2f::new(
-            object.width / sprite.texture_rect().width as f32,
-            object.height / sprite.texture_rect().height as f32,
-        ));
-        sprite.set_position(Vector2f::new(object.x, object.y));
-        sprite.set_rotation(object.rotation);
-        Ok(Box::new(sprite))
+        Ok(Box::new(sprite_from_tiled_obj(
+            context.assets,
+            map,
+            object,
+        )?))
     } else {
         Err(anyhow::anyhow!(
             "could not obtain ui object from tiled object {:?}",
             object
         ))
     }
+}
+
+#[derive(Debug, Error)]
+pub enum SpriteFromTiledObjError {
+    #[error("Tiled object has invalid GID `{0:?}`; Does not map to any tileset")]
+    InvalidGid(Gid),
+    #[error("Object tileset has invalid tilesheet name `{0}`")]
+    InvalidTilesheetName(String),
+}
+
+pub fn sprite_from_tiled_obj<'s>(
+    assets: &'s AssetManager,
+    map: &tiled::map::Map,
+    object: &tiled::objects::Object,
+) -> Result<Sprite<'s>, SpriteFromTiledObjError> {
+    let gid_tileset = map
+        .tileset_by_gid(object.gid)
+        .ok_or(SpriteFromTiledObjError::InvalidGid(object.gid))?;
+    let tilesheet = match gid_tileset.name.as_str() {
+        "icons" => &assets.icon_tilesheet,
+        "Sokoban" => &assets.tilesheet,
+        x => return Err(SpriteFromTiledObjError::InvalidTilesheetName(x.to_owned())),
+    };
+    let mut sprite = tilesheet
+        .tile_sprite(Gid(object.gid.0 - gid_tileset.first_gid.0 + 1))
+        .expect("invalid gid found in overlay object");
+    sprite.set_scale(Vector2f::new(
+        object.width / sprite.texture_rect().width as f32,
+        object.height / sprite.texture_rect().height as f32,
+    ));
+    sprite.set_position(Vector2f::new(object.x, object.y));
+    sprite.set_rotation(object.rotation);
+    Ok(sprite)
 }

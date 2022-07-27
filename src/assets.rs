@@ -20,6 +20,7 @@ pub const UI_CLICK_SOUND_PATH: &str = "assets/sound/ui_click.ogg";
 pub const WIN_FONT_PATH: &str = "assets/fonts/Varela_Round/VarelaRound-Regular.ttf";
 pub const ICON_TILESHEET_PATH: &str = "assets/tilesheets/icons.tsx";
 pub const MAIN_MENU_PATH: &str = "assets/levels/main_menu.tmx";
+pub const PLAY_OVERLAY_PATH: &str = "assets/levels/overlay.tmx";
 
 pub struct LevelCategory {
     pub name: String,
@@ -36,6 +37,7 @@ pub struct AssetManager {
     pub ui_click_sound: SfBox<SoundBuffer>,
     pub tilesheet: Tilesheet,
     pub win_font: SfBox<Font>,
+    pub play_overlay_map: Map,
     total_level_count: usize,
 }
 
@@ -75,6 +77,8 @@ impl AssetManager {
             .map(|lvl| lvl.try_into())
             .collect::<Result<Vec<LevelCategory>, _>>()?;
 
+        let play_overlay_map = Map::parse_file(Path::new(PLAY_OVERLAY_PATH))?;
+
         let map = Map::parse_file(Path::new("assets/levels/test.tmx"))?;
         Ok(Self {
             tilesheet: Tilesheet::from_tileset(map.tilesets[0].clone())?,
@@ -82,6 +86,7 @@ impl AssetManager {
             icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(1))?,
             total_level_count: level_categories.iter().flat_map(|c| c.maps.iter()).count(),
             level_categories,
+            play_overlay_map,
             ui_click_sound: SoundBuffer::from_file(UI_CLICK_SOUND_PATH)
                 .expect("could not load ui click sfx"),
             walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))

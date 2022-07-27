@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use sfml::{
     audio::{Sound, SoundSource},
-    graphics::{BlendMode, FloatRect, Rect, RenderStates, RenderTarget, Transform, Transformable},
+    graphics::{BlendMode, FloatRect, Rect, RenderStates, RenderTarget, Transformable},
     system::Vector2u,
     window::{Event, Key},
 };
@@ -15,6 +15,7 @@ use sfml::graphics::RenderWindow;
 
 use crate::{
     context::Context,
+    level::camera_transform,
     ui::{get_ui_obj_from_tiled_obj, UiObject},
 };
 
@@ -82,6 +83,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 ctx.assets.main_menu.width * ctx.assets.main_menu.tile_width,
                 ctx.assets.main_menu.height * ctx.assets.main_menu.tile_height,
             ),
+            0.,
         );
 
         for level_array in self.level_arrays.iter() {
@@ -192,6 +194,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 ctx.assets.main_menu.width * ctx.assets.main_menu.tile_width,
                 ctx.assets.main_menu.height * ctx.assets.main_menu.tile_height,
             ),
+            0.,
         );
         let render_states = RenderStates::new(BlendMode::ALPHA, camera_transform, None, None);
 
@@ -250,26 +253,4 @@ impl<'s> State<'s> for LevelSelect<'s> {
             }
         }
     }
-}
-
-pub fn camera_transform(window_size: Vector2u, map_size: Vector2u) -> Transform {
-    let map_size = Vector2f::new(map_size.x as f32, map_size.y as f32);
-    let window_size = Vector2f::new(window_size.x as f32, window_size.y as f32);
-    let viewport_size = Vector2f::new(window_size.x, window_size.y);
-
-    let scale_factors = map_size / viewport_size;
-    let map_scale = if scale_factors.x > scale_factors.y {
-        scale_factors.x
-    } else {
-        scale_factors.y
-    };
-    let map_px_size = map_size / map_scale;
-
-    let mut x = Transform::IDENTITY;
-    x.scale_with_center(map_scale, map_scale, 0f32, 0f32);
-    x.translate(
-        (map_px_size.x - viewport_size.x) / 2f32 + (viewport_size.x - window_size.x) / 2f32,
-        (map_px_size.y - viewport_size.y) / 2f32 + (viewport_size.y - window_size.y) / 2f32,
-    );
-    x.inverse()
 }
