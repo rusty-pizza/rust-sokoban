@@ -258,6 +258,10 @@ impl<'s> Level<'s> {
 
 /// Public instance functions
 impl Level<'_> {
+    pub fn action_count(&self) -> usize {
+        self.undo_history.len()
+    }
+
     /// The tilemap associated to the level.
     pub fn tilemap(&self) -> &Tilemap {
         &self.tilemap

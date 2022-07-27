@@ -244,10 +244,22 @@ impl<'s> State<'s> for Playing<'s> {
                 10.,
             ));
             target.draw_with_renderstates(&text, &RenderStates::DEFAULT);
+
+            let mut moves_text = Text::new(
+                format!("Used {} moves", self.level.action_count()).as_str(),
+                &ctx.assets.win_font,
+                30,
+            );
+            moves_text.set_position(Vector2f::new(
+                target.size().x as f32 / 2. - moves_text.global_bounds().width / 2.,
+                text.position().y + text.global_bounds().height + 20.,
+            ));
+            target.draw_with_renderstates(&moves_text, &RenderStates::DEFAULT);
+
             let mut subtext = Text::new("Press any key to continue", &ctx.assets.win_font, 30);
             subtext.set_position(Vector2f::new(
                 target.size().x as f32 / 2. - subtext.global_bounds().width / 2.,
-                10. + text.global_bounds().height + 20.,
+                moves_text.position().y + moves_text.global_bounds().height + 20.,
             ));
             target.draw_with_renderstates(&subtext, &RenderStates::DEFAULT);
         }
