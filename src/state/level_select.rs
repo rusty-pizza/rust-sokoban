@@ -33,7 +33,6 @@ pub struct LevelArray {
 pub struct LevelSelect<'s> {
     drawables: Vec<Box<dyn UiObject<'s> + 's>>,
     level_arrays: Vec<LevelArray>,
-    clicked: bool,
     level_hovered: Option<(usize, usize)>,
 }
 
@@ -64,7 +63,6 @@ impl<'s> LevelSelect<'s> {
         Ok(Self {
             drawables,
             level_arrays,
-            clicked: false,
             level_hovered: None,
         })
     }
@@ -107,7 +105,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                         .inverse()
                         .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
                     if level_icon.global_bounds().contains(mouse_pos) {
-                        if self.clicked {
+                        if ctx.input.just_released_lmb() {
                             let mut sound = Sound::with_buffer(&ctx.assets.ui_click_sound);
                             sound.set_volume(60.);
                             sound.play();
@@ -132,8 +130,6 @@ impl<'s> State<'s> for LevelSelect<'s> {
             }
         }
 
-        self.clicked = false;
-
         if let Some(next_state) = next_state {
             ControlFlow::Break(next_state)
         } else {
@@ -148,12 +144,6 @@ impl<'s> State<'s> for LevelSelect<'s> {
         event: Event,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
         match event {
-            Event::MouseButtonReleased {
-                button: sfml::window::mouse::Button::Left,
-                ..
-            } => {
-                self.clicked = true;
-            }
             Event::Resized { width, height } => {
                 let view = sfml::graphics::View::from_rect(&Rect {
                     left: 0.,

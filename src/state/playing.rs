@@ -54,7 +54,6 @@ pub struct Playing<'s> {
     category_index: usize,
     level: Level<'s>,
     overlay: PlayOverlay<'s>,
-    clicked: bool,
 }
 
 impl<'s> Playing<'s> {
@@ -90,7 +89,6 @@ impl<'s> Playing<'s> {
                 overlay,
                 back_button: back_button.expect("found no back button in play overlay"),
             },
-            clicked: false,
         })
     }
 }
@@ -121,7 +119,7 @@ impl<'s> State<'s> for Playing<'s> {
                 .back_button
                 .set_color(Color::rgb(0xde, 0xde, 0xde));
 
-            if self.clicked {
+            if ctx.input.just_released_lmb() {
                 let mut sound = Sound::with_buffer(&ctx.assets.ui_click_sound);
                 sound.set_volume(60.);
                 sound.play();
@@ -137,8 +135,6 @@ impl<'s> State<'s> for Playing<'s> {
                 .set_color(Color::rgb(0xff, 0xff, 0xff));
         }
 
-        self.clicked = false;
-
         ControlFlow::Continue(())
     }
 
@@ -151,13 +147,6 @@ impl<'s> State<'s> for Playing<'s> {
         let is_level_won = self.level.is_won();
 
         match event {
-            Event::MouseButtonReleased {
-                button: sfml::window::mouse::Button::Left,
-                ..
-            } => {
-                self.clicked = true;
-            }
-
             Event::KeyPressed { .. } if is_level_won => {
                 // Mark this level as complete
                 ctx.completed_levels.complete_lvl(

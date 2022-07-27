@@ -3,6 +3,7 @@ use std::{ops::ControlFlow, time::Duration};
 use assets::AssetManager;
 use context::{Context, SaveData};
 
+use input_system::InputSystem;
 use sfml::{
     graphics::RenderWindow,
     window::{ContextSettings, Event, Style},
@@ -13,6 +14,7 @@ use state::{LevelSelect, State};
 pub mod assets;
 pub mod context;
 pub mod graphics;
+pub mod input_system;
 pub mod level;
 pub mod sound_manager;
 pub mod state;
@@ -33,11 +35,14 @@ pub fn run() -> anyhow::Result<()> {
             Default::default()
         }
     };
+    let input = InputSystem::new();
+
     let mut context = Context {
         assets: &assets,
         completed_levels,
         delta_time: Duration::default(),
         sound,
+        input,
     };
     let mut state: Box<dyn State> = Box::new(LevelSelect::new(&context)?);
 
@@ -47,6 +52,7 @@ pub fn run() -> anyhow::Result<()> {
         context.delta_time = this_frame_time - last_frame_time;
 
         context.sound.update();
+        context.input.update();
 
         if let ControlFlow::Break(new_state) = state.tick(&mut context, &mut window) {
             state = new_state;
