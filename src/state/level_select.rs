@@ -214,11 +214,17 @@ impl<'s> State<'s> for LevelSelect<'s> {
 
         for level_array in self.level_arrays.iter() {
             let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
+            let mut lock_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(116)).unwrap();
             let category = &ctx.assets.level_categories[level_array.category];
             level_icon.set_position(Vector2f::new(level_array.rect.left, level_array.rect.top));
             level_icon.set_scale(Vector2f::new(
                 level_array.rect.height / level_icon.global_bounds().height,
                 level_array.rect.height / level_icon.global_bounds().height,
+            ));
+            lock_icon.set_position(Vector2f::new(level_array.rect.left, level_array.rect.top));
+            lock_icon.set_scale(Vector2f::new(
+                level_array.rect.height / lock_icon.global_bounds().height,
+                level_array.rect.height / lock_icon.global_bounds().height,
             ));
 
             let mut completed_previous_level = true;
@@ -228,6 +234,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                     .internal_set()
                     .contains(level.source.as_ref().unwrap());
                 let mut color;
+                let mut draw_lock = false;
                 if completed_level || completed_previous_level {
                     if matches!(self.level_hovered, Some((x, y)) if x == level_array.category && y == level_idx)
                     {
@@ -242,11 +249,16 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 } else {
                     color = category.color;
                     *color.alpha_mut() = 50;
+                    draw_lock = true;
                 }
                 level_icon.set_color(color);
                 target.draw_with_renderstates(&level_icon, &render_states);
+                if draw_lock {
+                    target.draw_with_renderstates(&lock_icon, &render_states);
+                }
 
                 level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
+                lock_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
 
                 completed_previous_level = completed_level;
             }
