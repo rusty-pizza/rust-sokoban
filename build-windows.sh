@@ -2,6 +2,7 @@
 # You will require the following dlls from `/usr/x86_64-w64-mingw32/bin/`:
 # - libgcc_s_seh-1.dll
 # - libstdc++6.dll
+# - libwinpthread-1.dll
 # And the following ones from SFML:
 # - openal32.dll
 # - sfml-window-2.dll
