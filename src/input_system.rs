@@ -1,4 +1,4 @@
-use sfml::window::mouse;
+use sfml::{graphics::RenderWindow, window::mouse};
 
 pub struct InputSystem {
     clicked_this_frame: bool,
@@ -13,13 +13,17 @@ impl InputSystem {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, window: &RenderWindow) {
         self.clicked_last_frame = self.clicked_this_frame;
-        self.clicked_this_frame = mouse::Button::Left.is_pressed()
+        self.clicked_this_frame = mouse::Button::Left.is_pressed() && window.has_focus()
     }
 
     pub fn just_pressed_lmb(&self) -> bool {
         self.clicked_this_frame && !self.clicked_last_frame
+    }
+
+    pub fn is_pressing_lmb(&self) -> bool {
+        self.clicked_this_frame
     }
 
     pub fn just_released_lmb(&self) -> bool {

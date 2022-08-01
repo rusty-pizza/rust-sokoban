@@ -52,7 +52,7 @@ pub fn run() -> anyhow::Result<()> {
         context.delta_time = this_frame_time - last_frame_time;
 
         context.sound.update();
-        context.input.update();
+        context.input.update(&window);
 
         if let ControlFlow::Break(new_state) = state.tick(&mut context, &mut window) {
             state = new_state;

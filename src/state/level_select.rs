@@ -218,11 +218,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 if completed_level || completed_previous_level {
                     if matches!(self.level_hovered, Some((x, y)) if x == level_array.category && y == level_idx)
                     {
-                        let amount_to_saturate = if sfml::window::mouse::Button::Left.is_pressed() {
-                            60
-                        } else {
-                            30
-                        };
+                        let amount_to_saturate = if ctx.input.is_pressing_lmb() { 60 } else { 30 };
                         color = category.color;
                         *color.red_mut() = color.red().saturating_add(amount_to_saturate);
                         *color.green_mut() = color.green().saturating_add(amount_to_saturate);
