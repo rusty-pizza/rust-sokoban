@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="100" tileheight="100" infinite="0" backgroundcolor="#1e1e1e" nextlayerid="3" nextobjectid="28">
+<map version="1.8" tiledversion="1.8.5" orientation="orthogonal" renderorder="right-down" width="16" height="9" tilewidth="100" tileheight="100" infinite="0" backgroundcolor="#1e1e1e" nextlayerid="3" nextobjectid="29">
  <tileset firstgid="1" source="../tilesheets/icons.tsx"/>
  <tileset firstgid="201" source="../tilesheets/sokoban_tilesheet.tsx"/>
  <layer id="1" name="Tile Layer 1" width="16" height="9" visible="0">
@@ -58,5 +58,8 @@
    <text fontfamily="Varela Round" pixelsize="64" wrap="1" color="#f0f0f0" valign="bottom">Colors</text>
   </object>
   <object id="27" name="level_array" type="Colors" x="30" y="777.667" width="1200" height="100"/>
+  <object id="28" x="1097.31" y="263.167" width="514.719" height="57.6667">
+   <text fontfamily="Varela Round" pixelsize="29" wrap="1" color="#9a2100">Press Ctrl+N to reset your progress</text>
+  </object>
  </objectgroup>
 </map>

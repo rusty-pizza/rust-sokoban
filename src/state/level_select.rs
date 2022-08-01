@@ -14,7 +14,7 @@ use sfml::graphics::Color;
 use sfml::graphics::RenderWindow;
 
 use crate::{
-    context::Context,
+    context::{Context, SaveData},
     level::camera_transform,
     ui::{get_ui_obj_from_tiled_obj, UiObject},
 };
@@ -156,6 +156,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 *self = LevelSelect::new(ctx).unwrap();
             }
 
+            #[cfg(debug_assertions)]
             // Unlock all levels when Ctrl+I is pressed
             Event::KeyPressed {
                 code: Key::I,
@@ -171,6 +172,18 @@ impl<'s> State<'s> for LevelSelect<'s> {
 
                 *self = LevelSelect::new(ctx).unwrap();
             }
+
+            // Reset progress when Ctrl+O is pressed
+            Event::KeyPressed {
+                code: Key::N,
+                ctrl: true,
+                ..
+            } => {
+                ctx.completed_levels = SaveData::default();
+
+                *self = LevelSelect::new(ctx).unwrap();
+            }
+
             _ => (),
         }
 
