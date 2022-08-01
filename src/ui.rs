@@ -1,11 +1,12 @@
 use sfml::{
-    graphics::{Color, Drawable, Sprite, Text, Transformable},
-    system::Vector2f,
+    audio::{Sound, SoundSource},
+    graphics::{Color, Drawable, RenderTarget, RenderWindow, Sprite, Text, Transformable},
+    system::{Vector2f, Vector2u},
 };
 use thiserror::Error;
 use tiled::{objects::ObjectShape, tile::Gid};
 
-use crate::{assets::AssetManager, context::Context};
+use crate::{assets::AssetManager, context::Context, level::camera_transform};
 
 pub trait UiObject<'a>: Drawable {
     fn as_drawable(&self) -> &dyn Drawable;
@@ -128,4 +129,48 @@ pub fn sprite_from_tiled_obj<'s>(
     sprite.set_position(Vector2f::new(object.x, object.y));
     sprite.set_rotation(object.rotation);
     Ok(sprite)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ButtonState {
+    Pressed,
+    Hovered,
+    Inactive,
+}
+
+pub fn update_button(ctx: &mut Context, window: &RenderWindow, sprite: &mut Sprite) -> ButtonState {
+    let transform = camera_transform(
+        window.size(),
+        Vector2u::new(
+            ctx.assets.play_overlay_map.width * ctx.assets.play_overlay_map.tile_width,
+            ctx.assets.play_overlay_map.height * ctx.assets.play_overlay_map.tile_height,
+        ),
+        0.,
+    );
+
+    let mouse_pos = window.mouse_position();
+    let mouse_pos = transform
+        .inverse()
+        .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
+
+    let mut color = sprite.color();
+
+    if sprite.global_bounds().contains(mouse_pos) {
+        *color.alpha_mut() = 0xcf;
+        sprite.set_color(color);
+
+        if ctx.input.just_released_lmb() {
+            let mut sound = Sound::with_buffer(&ctx.assets.ui_click_sound);
+            sound.set_volume(60.);
+            sound.play();
+            ctx.sound.add_sound(sound);
+            ButtonState::Pressed
+        } else {
+            ButtonState::Hovered
+        }
+    } else {
+        *color.alpha_mut() = 0xff;
+        sprite.set_color(color);
+        ButtonState::Inactive
+    }
 }

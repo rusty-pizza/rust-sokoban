@@ -1,6 +1,3 @@
-use sfml::audio::Sound;
-use sfml::audio::SoundSource;
-use sfml::graphics::Color;
 use sfml::graphics::Rect;
 
 use sfml;
@@ -36,6 +33,8 @@ use crate::context::Context;
 use crate::level::camera_transform;
 use crate::ui::get_ui_obj_from_tiled_obj;
 use crate::ui::sprite_from_tiled_obj;
+use crate::ui::update_button;
+use crate::ui::ButtonState;
 use crate::ui::UiObject;
 
 use super::State;
@@ -99,43 +98,18 @@ impl<'s> State<'s> for Playing<'s> {
         ctx: &mut Context<'s>,
         window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
-        let transform = camera_transform(
-            window.size(),
-            Vector2u::new(
-                ctx.assets.play_overlay_map.width * ctx.assets.play_overlay_map.tile_width,
-                ctx.assets.play_overlay_map.height * ctx.assets.play_overlay_map.tile_height,
-            ),
-            0.,
-        );
         self.level.update(ctx, ctx.delta_time);
 
-        let mouse_pos = window.mouse_position();
-        let mouse_pos = transform
-            .inverse()
-            .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
-
-        if self.overlay.back_button.global_bounds().contains(mouse_pos) {
-            self.overlay
-                .back_button
-                .set_color(Color::rgb(0xde, 0xde, 0xde));
-
-            if ctx.input.just_released_lmb() {
-                let mut sound = Sound::with_buffer(&ctx.assets.ui_click_sound);
-                sound.set_volume(60.);
-                sound.play();
-                ctx.sound.add_sound(sound);
-                return ControlFlow::Break(Box::new(
+        match update_button(ctx, window, &mut self.overlay.back_button) {
+            ButtonState::Pressed => {
+                let next_state =
                     Transitioning::new(ctx.assets, self.clone(), LevelSelect::new(ctx).unwrap())
-                        .unwrap(),
-                ));
-            }
-        } else {
-            self.overlay
-                .back_button
-                .set_color(Color::rgb(0xff, 0xff, 0xff));
-        }
+                        .unwrap();
 
-        ControlFlow::Continue(())
+                ControlFlow::Break(Box::new(next_state))
+            }
+            _ => ControlFlow::Continue(()),
+        }
     }
 
     fn process_event(

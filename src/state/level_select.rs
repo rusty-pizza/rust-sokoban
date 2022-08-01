@@ -1,8 +1,7 @@
 use std::ops::ControlFlow;
 
 use sfml::{
-    audio::{Sound, SoundSource},
-    graphics::{BlendMode, FloatRect, Rect, RenderStates, RenderTarget, Transformable},
+    graphics::{BlendMode, FloatRect, Rect, RenderStates, RenderTarget, Sprite, Transformable},
     system::Vector2u,
     window::{Event, Key},
 };
@@ -16,24 +15,85 @@ use sfml::graphics::RenderWindow;
 use crate::{
     context::{Context, SaveData},
     level::camera_transform,
-    ui::{get_ui_obj_from_tiled_obj, UiObject},
+    ui::{get_ui_obj_from_tiled_obj, update_button, ButtonState, UiObject},
 };
 
 use sfml::system::Vector2f;
 
 use super::{playing::Playing, State, Transitioning};
 
-#[derive(Clone, Copy)]
-pub struct LevelArray {
-    pub rect: FloatRect,
+#[derive(Clone)]
+struct LevelArrayButton<'s> {
+    pub sprite: Sprite<'s>,
+    pub lock_sprite: Option<Sprite<'s>>,
+}
+
+impl LevelArrayButton<'_> {
+    pub fn unlocked(&self) -> bool {
+        self.lock_sprite.is_none()
+    }
+}
+
+#[derive(Clone)]
+struct LevelArray<'s> {
     pub category: usize,
+    pub sprites: Vec<LevelArrayButton<'s>>,
+}
+
+impl<'s> LevelArray<'s> {
+    fn new(ctx: &Context<'s>, rect: FloatRect, category_idx: usize) -> Self {
+        let mut buttons = Vec::new();
+
+        let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
+        let mut lock_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(116)).unwrap();
+        let category = &ctx.assets.level_categories[category_idx];
+        level_icon.set_position(Vector2f::new(rect.left, rect.top));
+        level_icon.set_scale(Vector2f::new(
+            rect.height / level_icon.global_bounds().height,
+            rect.height / level_icon.global_bounds().height,
+        ));
+        lock_icon.set_position(Vector2f::new(rect.left, rect.top));
+        lock_icon.set_scale(Vector2f::new(
+            rect.height / lock_icon.global_bounds().height,
+            rect.height / lock_icon.global_bounds().height,
+        ));
+
+        let mut completed_previous_level = true;
+        for level in category.maps.iter() {
+            let completed_level = ctx
+                .completed_levels
+                .internal_set()
+                .contains(level.source.as_ref().unwrap());
+            let mut color = category.color;
+            let mut draw_lock = false;
+            if !(completed_level || completed_previous_level) {
+                color = category.color;
+                *color.alpha_mut() = 50;
+                draw_lock = true;
+            }
+            level_icon.set_color(color);
+            buttons.push(LevelArrayButton {
+                sprite: level_icon.clone(),
+                lock_sprite: draw_lock.then_some(lock_icon.clone()),
+            });
+
+            level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
+            lock_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
+
+            completed_previous_level = completed_level;
+        }
+
+        Self {
+            sprites: buttons,
+            category: category_idx,
+        }
+    }
 }
 
 #[derive(Clone)]
 pub struct LevelSelect<'s> {
     drawables: Vec<Box<dyn UiObject<'s> + 's>>,
-    level_arrays: Vec<LevelArray>,
-    level_hovered: Option<(usize, usize)>,
+    level_arrays: Vec<LevelArray<'s>>,
 }
 
 impl<'s> LevelSelect<'s> {
@@ -52,7 +112,7 @@ impl<'s> LevelSelect<'s> {
                     .find(|(_, cat)| cat.name == object.obj_type)
                     .expect("Unknown level category in level map")
                     .0;
-                level_arrays.push(LevelArray { rect, category });
+                level_arrays.push(LevelArray::new(ctx, rect, category));
             } else if let Ok(obj) = get_ui_obj_from_tiled_obj(ctx, &assets.main_menu, object) {
                 drawables.push(obj);
             } else {
@@ -63,7 +123,6 @@ impl<'s> LevelSelect<'s> {
         Ok(Self {
             drawables,
             level_arrays,
-            level_hovered: None,
         })
     }
 }
@@ -74,64 +133,30 @@ impl<'s> State<'s> for LevelSelect<'s> {
         ctx: &mut Context<'s>,
         window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
-        let mut next_state: Option<Box<dyn State<'s> + 's>> = None;
-        let camera_transform = camera_transform(
-            window.size(),
-            Vector2u::new(
-                ctx.assets.main_menu.width * ctx.assets.main_menu.tile_width,
-                ctx.assets.main_menu.height * ctx.assets.main_menu.tile_height,
-            ),
-            0.,
-        );
-
-        for level_array in self.level_arrays.iter() {
-            let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
+        let mut level_to_transition_to = None;
+        for level_array in self.level_arrays.iter_mut() {
             let category = &ctx.assets.level_categories[level_array.category];
-            level_icon.set_position(Vector2f::new(level_array.rect.left, level_array.rect.top));
-            level_icon.set_scale(Vector2f::new(
-                level_array.rect.height / level_icon.global_bounds().height,
-                level_array.rect.height / level_icon.global_bounds().height,
-            ));
 
-            let mut completed_previous_level = true;
-            for (level_idx, level) in category.maps.iter().enumerate() {
-                let completed_level = ctx
-                    .completed_levels
-                    .internal_set()
-                    .contains(level.source.as_ref().unwrap());
-                if completed_level || completed_previous_level {
-                    let mouse_pos = window.mouse_position();
-                    let mouse_pos = camera_transform
-                        .inverse()
-                        .transform_point(Vector2f::new(mouse_pos.x as f32, mouse_pos.y as f32));
-                    if level_icon.global_bounds().contains(mouse_pos) {
-                        if ctx.input.just_released_lmb() {
-                            let mut sound = Sound::with_buffer(&ctx.assets.ui_click_sound);
-                            sound.set_volume(60.);
-                            sound.play();
-                            ctx.sound.add_sound(sound);
-                            next_state = Some(Box::new(
-                                Transitioning::new(
-                                    ctx.assets,
-                                    self.clone(),
-                                    Playing::new(ctx, level_idx, level_array.category).unwrap(),
-                                )
-                                .unwrap(),
-                            ));
-                        }
-
-                        self.level_hovered = Some((level_array.category, level_idx));
+            for level_idx in 0..category.maps.len() {
+                let level_button = &mut level_array.sprites[level_idx];
+                if level_button.unlocked() {
+                    if update_button(ctx, window, &mut level_button.sprite) == ButtonState::Pressed
+                    {
+                        level_to_transition_to = Some((level_idx, level_array.category));
                     }
                 }
-
-                level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
-
-                completed_previous_level = completed_level;
             }
         }
 
-        if let Some(next_state) = next_state {
-            ControlFlow::Break(next_state)
+        if let Some((idx, category)) = level_to_transition_to {
+            ControlFlow::Break(Box::new(
+                Transitioning::new(
+                    ctx.assets,
+                    self.clone(),
+                    Playing::new(ctx, idx, category).unwrap(),
+                )
+                .unwrap(),
+            ))
         } else {
             ControlFlow::Continue(())
         }
@@ -173,7 +198,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 *self = LevelSelect::new(ctx).unwrap();
             }
 
-            // Reset progress when Ctrl+O is pressed
+            // Reset progress when Ctrl+N is pressed
             Event::KeyPressed {
                 code: Key::N,
                 ctrl: true,
@@ -213,54 +238,11 @@ impl<'s> State<'s> for LevelSelect<'s> {
         }
 
         for level_array in self.level_arrays.iter() {
-            let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
-            let mut lock_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(116)).unwrap();
-            let category = &ctx.assets.level_categories[level_array.category];
-            level_icon.set_position(Vector2f::new(level_array.rect.left, level_array.rect.top));
-            level_icon.set_scale(Vector2f::new(
-                level_array.rect.height / level_icon.global_bounds().height,
-                level_array.rect.height / level_icon.global_bounds().height,
-            ));
-            lock_icon.set_position(Vector2f::new(level_array.rect.left, level_array.rect.top));
-            lock_icon.set_scale(Vector2f::new(
-                level_array.rect.height / lock_icon.global_bounds().height,
-                level_array.rect.height / lock_icon.global_bounds().height,
-            ));
-
-            let mut completed_previous_level = true;
-            for (level_idx, level) in category.maps.iter().enumerate() {
-                let completed_level = ctx
-                    .completed_levels
-                    .internal_set()
-                    .contains(level.source.as_ref().unwrap());
-                let mut color;
-                let mut draw_lock = false;
-                if completed_level || completed_previous_level {
-                    if matches!(self.level_hovered, Some((x, y)) if x == level_array.category && y == level_idx)
-                    {
-                        let amount_to_saturate = if ctx.input.is_pressing_lmb() { 60 } else { 30 };
-                        color = category.color;
-                        *color.red_mut() = color.red().saturating_add(amount_to_saturate);
-                        *color.green_mut() = color.green().saturating_add(amount_to_saturate);
-                        *color.blue_mut() = color.blue().saturating_add(amount_to_saturate);
-                    } else {
-                        color = category.color;
-                    }
-                } else {
-                    color = category.color;
-                    *color.alpha_mut() = 50;
-                    draw_lock = true;
+            for button in level_array.sprites.iter() {
+                target.draw_with_renderstates(&button.sprite, &render_states);
+                if let Some(lock) = button.lock_sprite.as_ref() {
+                    target.draw_with_renderstates(lock, &render_states);
                 }
-                level_icon.set_color(color);
-                target.draw_with_renderstates(&level_icon, &render_states);
-                if draw_lock {
-                    target.draw_with_renderstates(&lock_icon, &render_states);
-                }
-
-                level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
-                lock_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
-
-                completed_previous_level = completed_level;
             }
         }
     }
