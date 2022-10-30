@@ -1,6 +1,10 @@
 use std::ops::ControlFlow;
 
+#[cfg(feature = "editor")]
 use guiedit::RenderWindow;
+#[cfg(not(feature = "editor"))]
+use sfml::graphics::RenderWindow;
+
 use sfml::{graphics::RenderTarget, window::Event};
 
 use crate::context::Context;

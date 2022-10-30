@@ -1,4 +1,8 @@
+#[cfg(feature = "editor")]
 use guiedit::RenderWindow;
+#[cfg(not(feature = "editor"))]
+use sfml::graphics::RenderWindow;
+
 use sfml::graphics::Color;
 use sfml::graphics::Rect;
 use sfml::graphics::RenderTarget;

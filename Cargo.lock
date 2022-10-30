@@ -222,11 +222,23 @@ dependencies = [
 [[package]]
 name = "guiedit"
 version = "0.1.0"
-source = "git+https://github.com/aleokdev/guiedit#6d0c117baad81ee74f0e9dda9b79297414dc325b"
+source = "git+https://github.com/aleokdev/guiedit#f571e1b16353d34976820869e47449f1fb9167b1"
 dependencies = [
  "egui",
  "egui-sfml",
  "sfml",
+]
+
+[[package]]
+name = "guiedit_derive"
+version = "0.1.0"
+source = "git+https://github.com/aleokdev/guiedit#f571e1b16353d34976820869e47449f1fb9167b1"
+dependencies = [
+ "egui",
+ "guiedit",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -526,6 +538,7 @@ dependencies = [
  "directories",
  "env_logger",
  "guiedit",
+ "guiedit_derive",
  "log",
  "pathdiff",
  "rand",

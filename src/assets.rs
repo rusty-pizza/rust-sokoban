@@ -22,12 +22,14 @@ pub const ICON_TILESHEET_PATH: &str = "assets/tilesheets/icons.tsx";
 pub const MAIN_MENU_PATH: &str = "assets/levels/main_menu.tmx";
 pub const PLAY_OVERLAY_PATH: &str = "assets/levels/overlay.tmx";
 
+#[cfg_attr(feature = "editor", derive(guiedit_derive::Inspectable))]
 pub struct LevelCategory {
     pub name: String,
     pub color: Color,
     pub maps: Vec<Map>,
 }
 
+#[cfg_attr(feature = "editor", derive(guiedit_derive::Inspectable))]
 pub struct AssetManager {
     pub main_menu: Map,
     pub level_categories: Vec<LevelCategory>,

@@ -1,4 +1,8 @@
+#[cfg(feature = "editor")]
 use guiedit::RenderWindow;
+#[cfg(not(feature = "editor"))]
+use sfml::graphics::RenderWindow;
+
 use sfml::{
     audio::{Sound, SoundSource},
     graphics::{Color, Drawable, RenderTarget, Sprite, Text, Transformable},

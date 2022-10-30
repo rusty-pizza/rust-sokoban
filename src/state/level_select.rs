@@ -8,7 +8,11 @@ use sfml::{
 
 use tiled::{self, tile::Gid};
 
+#[cfg(feature = "editor")]
 use guiedit::RenderWindow;
+#[cfg(not(feature = "editor"))]
+use sfml::graphics::RenderWindow;
+
 use sfml::graphics::Color;
 
 use crate::{

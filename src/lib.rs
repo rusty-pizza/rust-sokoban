@@ -3,7 +3,11 @@ use std::{ops::ControlFlow, time::Duration};
 use assets::AssetManager;
 use context::{Context, SaveData};
 
+#[cfg(feature = "editor")]
 use guiedit::RenderWindow;
+#[cfg(not(feature = "editor"))]
+use sfml::graphics::RenderWindow;
+
 use input_system::InputSystem;
 use sfml::window::{ContextSettings, Event, Style};
 use sound_manager::SoundManager;

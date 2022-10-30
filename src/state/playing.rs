@@ -25,7 +25,11 @@ use sfml::graphics::BlendMode;
 
 use sfml::graphics::RenderStates;
 
+#[cfg(feature = "editor")]
 use guiedit::RenderWindow;
+#[cfg(not(feature = "editor"))]
+use sfml::graphics::RenderWindow;
+
 use std::ops::ControlFlow;
 
 use crate::context::Context;

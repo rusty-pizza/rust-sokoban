@@ -4,6 +4,7 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Default)]
+#[cfg_attr(feature = "editor", derive(guiedit_derive::Inspectable))]
 pub struct SaveData {
     set: HashSet<PathBuf>,
 }
