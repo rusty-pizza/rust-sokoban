@@ -1,6 +1,7 @@
+use guiedit::RenderWindow;
 use sfml::{
     audio::{Sound, SoundSource},
-    graphics::{Color, Drawable, RenderTarget, RenderWindow, Sprite, Text, Transformable},
+    graphics::{Color, Drawable, RenderTarget, Sprite, Text, Transformable},
     system::{Vector2f, Vector2u},
 };
 use thiserror::Error;

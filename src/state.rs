@@ -1,9 +1,7 @@
 use std::ops::ControlFlow;
 
-use sfml::{
-    graphics::{RenderTarget, RenderWindow},
-    window::Event,
-};
+use guiedit::RenderWindow;
+use sfml::{graphics::RenderTarget, window::Event};
 
 use crate::context::Context;
 

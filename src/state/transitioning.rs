@@ -1,8 +1,8 @@
+use guiedit::RenderWindow;
 use sfml::graphics::Color;
 use sfml::graphics::Rect;
 use sfml::graphics::RenderTarget;
 use sfml::graphics::RenderTexture;
-use sfml::graphics::RenderWindow;
 use sfml::graphics::Sprite;
 use sfml::window::Event;
 

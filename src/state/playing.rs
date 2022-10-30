@@ -25,9 +25,8 @@ use sfml::graphics::BlendMode;
 
 use sfml::graphics::RenderStates;
 
+use guiedit::RenderWindow;
 use std::ops::ControlFlow;
-
-use sfml::graphics::RenderWindow;
 
 use crate::context::Context;
 use crate::level::camera_transform;

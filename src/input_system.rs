@@ -1,4 +1,5 @@
-use sfml::{graphics::RenderWindow, window::mouse};
+use guiedit::RenderWindow;
+use sfml::window::mouse;
 
 pub struct InputSystem {
     clicked_this_frame: bool,

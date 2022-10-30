@@ -3,11 +3,9 @@ use std::{ops::ControlFlow, time::Duration};
 use assets::AssetManager;
 use context::{Context, SaveData};
 
+use guiedit::RenderWindow;
 use input_system::InputSystem;
-use sfml::{
-    graphics::RenderWindow,
-    window::{ContextSettings, Event, Style},
-};
+use sfml::window::{ContextSettings, Event, Style};
 use sound_manager::SoundManager;
 use state::{LevelSelect, State};
 

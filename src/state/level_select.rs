@@ -8,9 +8,8 @@ use sfml::{
 
 use tiled::{self, tile::Gid};
 
+use guiedit::RenderWindow;
 use sfml::graphics::Color;
-
-use sfml::graphics::RenderWindow;
 
 use crate::{
     context::{Context, SaveData},
