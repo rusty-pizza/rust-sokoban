@@ -111,8 +111,9 @@ impl<'s> Crate<'s> {
                 tilesheet.texture(),
                 &[normal_tex_rect, dropped_tex_rect, positioned_tex_rect],
             );
-            sprite_atlas
-                .set_position(Vector2f::new(position.x as f32, position.y as f32) * grid_size);
+            sprite_atlas.set_position(
+                Vector2f::new(position.x as f32, position.y as f32).cwise_mul(grid_size),
+            );
             sprite_atlas
         };
 
@@ -131,8 +132,9 @@ impl<'s> Crate<'s> {
 
     pub fn set_position(&mut self, position: Vector2i) {
         self.position = position;
-        self.sprite_atlas
-            .set_position(Vector2f::new(position.x as f32, position.y as f32) * self.grid_size);
+        self.sprite_atlas.set_position(
+            Vector2f::new(position.x as f32, position.y as f32).cwise_mul(self.grid_size),
+        );
     }
 
     pub fn in_hole(&self) -> bool {
@@ -234,8 +236,9 @@ impl<'s> Goal<'s> {
                 tilesheet.texture(),
                 &[pending_tex_rect, done_tex_rect],
             );
-            sprite_atlas
-                .set_position(Vector2f::new(position.x as f32, position.y as f32) * grid_size);
+            sprite_atlas.set_position(
+                Vector2f::new(position.x as f32, position.y as f32).cwise_mul(grid_size),
+            );
             sprite_atlas
         };
 

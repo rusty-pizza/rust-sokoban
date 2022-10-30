@@ -68,7 +68,7 @@ impl<'s> LevelArray<'s> {
             let mut draw_lock = false;
             if !(completed_level || completed_previous_level) {
                 color = category.color;
-                *color.alpha_mut() = 50;
+                color.a = 50;
                 draw_lock = true;
             }
             level_icon.set_color(color);

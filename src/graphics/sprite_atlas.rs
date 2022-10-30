@@ -70,7 +70,7 @@ impl<'t> SpriteAtlas<'t> {
 
     pub fn set_alpha(&mut self, alpha: u8) {
         let mut color = self.sprite.color();
-        *color.alpha_mut() = alpha;
+        color.a = alpha;
         self.sprite.set_color(color);
     }
 }
@@ -120,11 +120,11 @@ impl Transformable for SpriteAtlas<'_> {
         self.sprite.scale(factors);
     }
 
-    fn transform(&self) -> sfml::graphics::Transform {
+    fn transform(&self) -> &sfml::graphics::Transform {
         self.sprite.transform()
     }
 
-    fn inverse_transform(&self) -> sfml::graphics::Transform {
+    fn inverse_transform(&self) -> &sfml::graphics::Transform {
         self.sprite.inverse_transform()
     }
 }

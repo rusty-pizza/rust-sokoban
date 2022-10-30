@@ -40,7 +40,8 @@ impl Player<'_> {
             &[north_frame, south_frame, east_frame, west_frame],
         );
 
-        atlas.set_position(Vector2f::new(position.x as f32, position.y as f32) * grid_size);
+        atlas
+            .set_position(Vector2f::new(position.x as f32, position.y as f32).cwise_mul(grid_size));
         atlas.set_frame(Direction::South as usize).unwrap();
 
         Some(Player {
@@ -58,8 +59,9 @@ impl Player<'_> {
 
     pub fn set_position(&mut self, position: Vector2i) {
         self.position = position;
-        self.atlas
-            .set_position(Vector2f::new(position.x as f32, position.y as f32) * self.grid_size);
+        self.atlas.set_position(
+            Vector2f::new(position.x as f32, position.y as f32).cwise_mul(self.grid_size),
+        );
     }
 
     pub fn position(&self) -> Vector2i {

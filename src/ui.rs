@@ -156,7 +156,7 @@ pub fn update_button(ctx: &mut Context, window: &RenderWindow, sprite: &mut Spri
     let mut color = sprite.color();
 
     if sprite.global_bounds().contains(mouse_pos) {
-        *color.alpha_mut() = 0xcf;
+        color.a = 0xcf;
         sprite.set_color(color);
 
         if ctx.input.just_released_lmb() {
@@ -169,7 +169,7 @@ pub fn update_button(ctx: &mut Context, window: &RenderWindow, sprite: &mut Spri
             ButtonState::Hovered
         }
     } else {
-        *color.alpha_mut() = 0xff;
+        color.a = 0xff;
         sprite.set_color(color);
         ButtonState::Inactive
     }

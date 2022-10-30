@@ -230,8 +230,9 @@ impl<'s> Level<'s> {
             );
             if f_tile.gid != Gid::EMPTY {
                 vertices.add_quad(
-                    (position + FLOOR_OFFSET - TILE_DILATION) * grid_size,
-                    (1f32 + TILE_DILATION * 2.) * grid_size,
+                    (position + FLOOR_OFFSET - Vector2f::new(TILE_DILATION, TILE_DILATION))
+                        .cwise_mul(grid_size),
+                    grid_size * (1f32 + TILE_DILATION * 2.),
                     tilesheet
                         .tile_uv(f_tile.gid)
                         .expect("obtaining floor tile UV"),
@@ -239,8 +240,8 @@ impl<'s> Level<'s> {
             }
             if b_tile.gid != Gid::EMPTY {
                 vertices.add_quad(
-                    (position - TILE_DILATION) * grid_size,
-                    (1f32 + TILE_DILATION * 2.) * grid_size,
+                    (position - Vector2f::new(TILE_DILATION, TILE_DILATION)).cwise_mul(grid_size),
+                    grid_size * (1f32 + TILE_DILATION * 2.),
                     tilesheet
                         .tile_uv(b_tile.gid)
                         .expect("obtaining building tile UV"),
@@ -439,7 +440,7 @@ pub fn camera_transform(
     let window_size = Vector2f::new(window_size.x as f32, window_size.y as f32);
     let viewport_size = Vector2f::new(window_size.x, window_size.y);
 
-    let scale_factors = map_size / viewport_size;
+    let scale_factors = map_size.cwise_div(viewport_size);
     let map_scale = if scale_factors.x > scale_factors.y {
         scale_factors.x
     } else {
