@@ -26,7 +26,7 @@ use sfml::graphics::BlendMode;
 use sfml::graphics::RenderStates;
 
 #[cfg(feature = "editor")]
-use guiedit::RenderWindow;
+use guiedit::sfml::graphics::RenderWindow;
 #[cfg(not(feature = "editor"))]
 use sfml::graphics::RenderWindow;
 
@@ -45,12 +45,20 @@ use super::State;
 use crate::level::Level;
 
 #[derive(Clone)]
+#[cfg_attr(
+    feature = "editor",
+    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
+)]
 pub struct PlayOverlay<'s> {
     overlay: Vec<Box<dyn UiObject<'s> + 's>>,
     back_button: Sprite<'s>,
 }
 
 #[derive(Clone)]
+#[cfg_attr(
+    feature = "editor",
+    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
+)]
 pub struct Playing<'s> {
     level_index: usize,
     category_index: usize,

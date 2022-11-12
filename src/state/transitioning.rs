@@ -1,5 +1,5 @@
 #[cfg(feature = "editor")]
-use guiedit::RenderWindow;
+use guiedit::sfml::graphics::RenderWindow;
 #[cfg(not(feature = "editor"))]
 use sfml::graphics::RenderWindow;
 
@@ -18,9 +18,15 @@ use crate::context::Context;
 
 use super::State;
 
+#[cfg_attr(
+    feature = "editor",
+    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
+)]
 pub struct Transitioning<'s> {
+    #[cfg_attr(feature = "editor", inspectable(ignore))]
     prev_state: Box<dyn State<'s> + 's>,
     // HACK: This is an option because `tick` does not move the state and as such we cannot move the next state out
+    #[cfg_attr(feature = "editor", inspectable(ignore))]
     next_state: Option<Box<dyn State<'s> + 's>>,
     time_left: Duration,
 }

@@ -94,6 +94,10 @@ fn play_undo_sound(context: &mut Context) {
 }
 /// Represents a sokoban level or puzzle.
 #[derive(Clone)]
+#[cfg_attr(
+    feature = "editor",
+    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
+)]
 pub struct Level<'s> {
     overlay: Vec<Box<dyn UiObject<'s> + 's>>,
     player_spawn: Vector2i,

@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 #[cfg(feature = "editor")]
-use guiedit::RenderWindow;
+use guiedit::sfml::graphics::RenderWindow;
 #[cfg(not(feature = "editor"))]
 use sfml::graphics::RenderWindow;
 
@@ -9,7 +9,18 @@ use sfml::{graphics::RenderTarget, window::Event};
 
 use crate::context::Context;
 
-pub trait State<'s> {
+#[cfg(feature = "editor")]
+mod imp {
+    pub trait StateDeps: guiedit::tree::TreeNode {}
+    impl<T: guiedit::tree::TreeNode> StateDeps for T {}
+}
+#[cfg(not(feature = "editor"))]
+mod imp {
+    pub trait StateDeps {}
+    impl<T> StateDeps for T {}
+}
+
+pub trait State<'s>: imp::StateDeps {
     // Sadly this function cannot move `self` because that would make it object unsafe
     fn tick(
         &mut self,

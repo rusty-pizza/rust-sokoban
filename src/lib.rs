@@ -4,7 +4,7 @@ use assets::AssetManager;
 use context::{Context, SaveData};
 
 #[cfg(feature = "editor")]
-use guiedit::RenderWindow;
+use guiedit::sfml::graphics::RenderWindow;
 #[cfg(not(feature = "editor"))]
 use sfml::graphics::RenderWindow;
 
@@ -74,6 +74,9 @@ pub fn run() -> anyhow::Result<()> {
 
         state.draw(&mut context, &mut window);
 
+        #[cfg(feature = "editor")]
+        window.display_and_inspect(&mut state);
+        #[cfg(not(feature = "editor"))]
         window.display();
 
         last_frame_time = this_frame_time;

@@ -1,11 +1,14 @@
 #[cfg(feature = "editor")]
-use guiedit::RenderWindow;
+use guiedit::sfml::graphics::RenderWindow;
 #[cfg(not(feature = "editor"))]
 use sfml::graphics::RenderWindow;
 
 use sfml::window::mouse;
 
-#[cfg_attr(feature = "editor", derive(guiedit_derive::Inspectable))]
+#[cfg_attr(
+    feature = "editor",
+    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
+)]
 pub struct InputSystem {
     clicked_this_frame: bool,
     clicked_last_frame: bool,

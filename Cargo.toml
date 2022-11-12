@@ -20,5 +20,7 @@ directories = "4.0.1"
 env_logger = "0.9.0"
 log = "0.4.17"
 sfml = { version = "0.18.1", features = ["graphics", "audio"] }
-guiedit = { git = "https://github.com/aleokdev/guiedit", optional = true }
+guiedit = { git = "https://github.com/aleokdev/guiedit", features = [
+    "sfml",
+], optional = true }
 guiedit_derive = { git = "https://github.com/aleokdev/guiedit", optional = true }

@@ -9,7 +9,7 @@ use sfml::{
 use tiled::{self, tile::Gid};
 
 #[cfg(feature = "editor")]
-use guiedit::RenderWindow;
+use guiedit::sfml::graphics::RenderWindow;
 #[cfg(not(feature = "editor"))]
 use sfml::graphics::RenderWindow;
 
@@ -94,6 +94,10 @@ impl<'s> LevelArray<'s> {
 }
 
 #[derive(Clone)]
+#[cfg_attr(
+    feature = "editor",
+    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
+)]
 pub struct LevelSelect<'s> {
     drawables: Vec<Box<dyn UiObject<'s> + 's>>,
     level_arrays: Vec<LevelArray<'s>>,
