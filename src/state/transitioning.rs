@@ -18,10 +18,7 @@ use crate::context::Context;
 
 use super::State;
 
-#[cfg_attr(
-    feature = "editor",
-    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
-)]
+#[cfg_attr(feature = "editor", derive(guiedit::Inspectable, guiedit::TreeNode))]
 pub struct Transitioning<'s> {
     #[cfg_attr(feature = "editor", inspectable(ignore))]
     prev_state: Box<dyn State<'s> + 's>,

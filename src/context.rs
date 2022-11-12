@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use crate::{assets::AssetManager, input_system::InputSystem, sound_manager::SoundManager};
 
-#[cfg_attr(feature = "editor", derive(guiedit_derive::Inspectable))]
+#[cfg_attr(feature = "editor", derive(guiedit::Inspectable))]
 pub struct Context<'assets> {
     pub assets: &'assets AssetManager,
     pub sound: SoundManager<'assets>,

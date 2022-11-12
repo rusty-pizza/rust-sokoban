@@ -14,10 +14,7 @@ use tiled::{error::TiledError, tile::Gid, tileset::Tileset};
 use thiserror::Error;
 
 /// A container for a tileset and the texture it references.
-#[cfg_attr(
-    feature = "editor",
-    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
-)]
+#[cfg_attr(feature = "editor", derive(guiedit::Inspectable, guiedit::TreeNode))]
 pub struct Tilesheet {
     texture: SfBox<Texture>,
     tileset: Tileset,

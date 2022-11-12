@@ -10,10 +10,7 @@ use super::Direction;
 
 /// Represents the player inside of a level.
 #[derive(Clone)]
-#[cfg_attr(
-    feature = "editor",
-    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
-)]
+#[cfg_attr(feature = "editor", derive(guiedit::Inspectable, guiedit::TreeNode))]
 pub struct Player<'s> {
     position: Vector2i,
     atlas: SpriteAtlas<'s>,

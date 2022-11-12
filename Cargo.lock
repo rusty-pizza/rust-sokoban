@@ -158,8 +158,9 @@ dependencies = [
 
 [[package]]
 name = "egui-sfml"
-version = "0.1.1"
-source = "git+https://github.com/aleokdev/egui-sfml?branch=time-fix#743a370f33b1df53a9f0b1bde7779458edf2a081"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eea819051a11b343a8b5a52f7b5241cb796b58781de78586347b28037cb2d18d"
 dependencies = [
  "egui",
  "glu-sys",
@@ -222,19 +223,21 @@ dependencies = [
 [[package]]
 name = "guiedit"
 version = "0.1.0"
-source = "git+https://github.com/aleokdev/guiedit#d5339daa31319e5104a38c5c732a154ac7502638"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "070c598bd0ac38ed0e1b9d25775f51603d67ad55a3ef5a36ae5eb15f7cd8d383"
 dependencies = [
  "egui",
  "egui-sfml",
+ "guiedit_derive",
  "sfml",
 ]
 
 [[package]]
 name = "guiedit_derive"
 version = "0.1.0"
-source = "git+https://github.com/aleokdev/guiedit#d5339daa31319e5104a38c5c732a154ac7502638"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0caf6e0c2e2dfbbc20cfbf79410254c7014ccbc959f1c338402aebc1139c9d85"
 dependencies = [
- "guiedit",
  "proc-macro2",
  "quote",
  "syn",
@@ -511,9 +514,9 @@ dependencies = [
 
 [[package]]
 name = "sfml"
-version = "0.18.1"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a02fe31a239a21ee78ca0f41b5314ee61b32a6f24463959afbb46aaf9c4b16a"
+checksum = "bb44f79cc7bda2f02f4af9fc26a8d49597c5d8ac2e801db7f30dceebc623d2fc"
 dependencies = [
  "bitflags",
  "cc",
@@ -537,7 +540,6 @@ dependencies = [
  "directories",
  "env_logger",
  "guiedit",
- "guiedit_derive",
  "log",
  "pathdiff",
  "rand",

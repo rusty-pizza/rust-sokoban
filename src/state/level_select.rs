@@ -94,10 +94,7 @@ impl<'s> LevelArray<'s> {
 }
 
 #[derive(Clone)]
-#[cfg_attr(
-    feature = "editor",
-    derive(guiedit_derive::Inspectable, guiedit_derive::TreeNode)
-)]
+#[cfg_attr(feature = "editor", derive(guiedit::Inspectable, guiedit::TreeNode))]
 pub struct LevelSelect<'s> {
     drawables: Vec<Box<dyn UiObject<'s> + 's>>,
     level_arrays: Vec<LevelArray<'s>>,
