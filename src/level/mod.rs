@@ -98,7 +98,9 @@ fn play_undo_sound(context: &mut Context) {
 pub struct Level<'s> {
     overlay: Vec<Box<dyn UiObject<'s> + 's>>,
     player_spawn: Vector2i,
+    #[inspectable(ignore)]
     crates: Vec<Crate<'s>>,
+    #[inspectable(ignore)]
     goals: Vec<Goal<'s>>,
     tilemap: Tilemap,
     tilesheet: &'s Tilesheet,

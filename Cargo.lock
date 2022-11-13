@@ -223,8 +223,7 @@ dependencies = [
 [[package]]
 name = "guiedit"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "070c598bd0ac38ed0e1b9d25775f51603d67ad55a3ef5a36ae5eb15f7cd8d383"
+source = "git+https://github.com/aleokdev/guiedit?branch=better-viewport#aad6c2884b26df2026be5875067180e6fe8c1880"
 dependencies = [
  "egui",
  "egui-sfml",
@@ -235,8 +234,7 @@ dependencies = [
 [[package]]
 name = "guiedit_derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0caf6e0c2e2dfbbc20cfbf79410254c7014ccbc959f1c338402aebc1139c9d85"
+source = "git+https://github.com/aleokdev/guiedit?branch=better-viewport#aad6c2884b26df2026be5875067180e6fe8c1880"
 dependencies = [
  "proc-macro2",
  "quote",
