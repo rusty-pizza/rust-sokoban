@@ -10,10 +10,10 @@ tiled = { git = "https://github.com/rusty-pizza/rs-tiled" }
 anyhow = "1.0"
 thiserror = "1.0"
 rand = "0.8.5"
-ron = "0.7.1"
+ron = "0.8.1"
 serde = { version = "1", features = ["derive"] }
 pathdiff = "0.2.1"
 directories = "4.0.1"
-env_logger = "0.9.0"
+env_logger = "0.11.3"
 log = "0.4.17"
 sfml = { version = "0.21.0", features = ["graphics", "audio"] }
