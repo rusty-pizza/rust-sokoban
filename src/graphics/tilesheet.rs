@@ -136,6 +136,6 @@ impl Tilesheet {
 
     pub fn tile_sprite(&self, gid: Gid) -> Option<Sprite> {
         self.tile_rect(gid)
-            .map(|rect| Sprite::with_texture_and_rect(&self.texture, &rect))
+            .map(|rect| Sprite::with_texture_and_rect(&self.texture, rect))
     }
 }

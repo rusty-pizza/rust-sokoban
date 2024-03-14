@@ -170,7 +170,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()> {
         match event {
             Event::Resized { width, height } => {
-                let view = sfml::graphics::View::from_rect(&Rect {
+                let view = sfml::graphics::View::from_rect(Rect {
                     left: 0.,
                     top: 0.,
                     width: width as f32,

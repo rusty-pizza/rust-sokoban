@@ -71,7 +71,7 @@ impl<'s> State<'s> for Transitioning<'s> {
 
         let mut overlay_sprite = Sprite::with_texture_and_rect(
             render_target.texture(),
-            &Rect {
+            Rect {
                 width: target.size().x as i32,
                 height: -(target.size().y as i32),
                 top: target.size().y as i32,

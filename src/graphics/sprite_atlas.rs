@@ -39,7 +39,7 @@ impl<'t> SpriteAtlas<'t> {
             current_frame: 0,
             frames: Vec::from(frames),
             sprite: if let Some(first_frame) = frames.get(0) {
-                Sprite::with_texture_and_rect(texture, first_frame)
+                Sprite::with_texture_and_rect(texture, *first_frame)
             } else {
                 Sprite::with_texture(texture)
             },
@@ -61,7 +61,7 @@ impl<'t> SpriteAtlas<'t> {
     pub fn set_frame(&mut self, frame: usize) -> Result<(), SetFrameError> {
         if let Some(rect) = self.frames.get(frame) {
             self.current_frame = frame;
-            self.sprite.set_texture_rect(rect);
+            self.sprite.set_texture_rect(*rect);
             Ok(())
         } else {
             Err(SetFrameError { index: frame })
