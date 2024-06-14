@@ -1,5 +1,6 @@
 use std::{ops::ControlFlow, time::Duration};
 
+use anyhow::Context as AnyCtx;
 use assets::AssetManager;
 use context::{Context, SaveData};
 
@@ -21,11 +22,10 @@ pub mod state;
 pub mod ui;
 
 /// Run the game, returning on failure.
-/// Will load and display the [`Level`] at [`LEVEL_PATH`].
 pub fn run() -> anyhow::Result<()> {
     env_logger::init();
 
-    let assets = AssetManager::load()?;
+    let assets = AssetManager::load().context("failed to load assets")?;
     let mut window = create_window();
     let sound = SoundManager::new();
     let completed_levels = match SaveData::from_savefile() {

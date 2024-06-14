@@ -34,6 +34,9 @@ impl LevelArrayButton<'_> {
     }
 }
 
+/// An UI element containing a set of clickable level icons.
+///
+/// Will render as a horizontal list of buttons, each one corresponding to a different level in a category.
 #[derive(Clone)]
 struct LevelArray<'s> {
     pub category: usize,
@@ -41,9 +44,12 @@ struct LevelArray<'s> {
 }
 
 impl<'s> LevelArray<'s> {
+    /// Create a new [`LevelArray`] from a target rect to display at and a category index to display the levels from.
     fn new(ctx: &Context<'s>, rect: FloatRect, category_idx: usize) -> Self {
         let mut buttons = Vec::new();
 
+        // Setup the level icons to use. We'll clone these for each level in the category
+        // We'll use the lock icon over levels that haven't unlocked yet
         let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
         let mut lock_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(116)).unwrap();
         let category = &ctx.assets.level_categories[category_idx];
@@ -64,19 +70,22 @@ impl<'s> LevelArray<'s> {
                 .completed_levels
                 .internal_set()
                 .contains(level.source.as_ref().unwrap());
-            let mut color = category.color;
-            let mut draw_lock = false;
-            if !(completed_level || completed_previous_level) {
-                color = category.color;
-                color.a = 50;
-                draw_lock = true;
-            }
+            let is_unlocked = completed_level || completed_previous_level;
+            let color = if is_unlocked {
+                Color {
+                    a: 50,
+                    ..category.color
+                }
+            } else {
+                category.color
+            };
             level_icon.set_color(color);
             buttons.push(LevelArrayButton {
                 sprite: level_icon.clone(),
-                lock_sprite: draw_lock.then_some(lock_icon.clone()),
+                lock_sprite: (!is_unlocked).then_some(lock_icon.clone()),
             });
 
+            // Move to where the next icon will go
             level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
             lock_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
 
@@ -90,6 +99,7 @@ impl<'s> LevelArray<'s> {
     }
 }
 
+/// The level select screen. Uses the `main_menu` level in the asset manager to set up its layout.
 #[derive(Clone)]
 pub struct LevelSelect<'s> {
     drawables: Vec<Box<dyn UiObject<'s> + 's>>,
@@ -142,7 +152,9 @@ impl<'s> State<'s> for LevelSelect<'s> {
                 if level_button.unlocked() {
                     if update_button(ctx, window, &mut level_button.sprite) == ButtonState::Pressed
                     {
+                        // Lifetime shenanigans: Can't return here because we need access to self, which is currently being mutably borrowed
                         level_to_transition_to = Some((level_idx, level_array.category));
+                        break;
                     }
                 }
             }
