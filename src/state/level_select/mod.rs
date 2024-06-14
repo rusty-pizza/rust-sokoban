@@ -1,12 +1,10 @@
 use std::ops::ControlFlow;
 
 use sfml::{
-    graphics::{BlendMode, FloatRect, Rect, RenderStates, RenderTarget, Sprite, Transformable},
+    graphics::{BlendMode, FloatRect, Rect, RenderStates, RenderTarget},
     system::Vector2u,
     window::{Event, Key},
 };
-
-use tiled::{self, tile::Gid};
 
 use sfml::graphics::Color;
 
@@ -18,86 +16,11 @@ use crate::{
     ui::{get_ui_obj_from_tiled_obj, update_button, ButtonState, UiObject},
 };
 
-use sfml::system::Vector2f;
-
 use super::{playing::Playing, State, Transitioning};
 
-#[derive(Clone)]
-struct LevelArrayButton<'s> {
-    pub sprite: Sprite<'s>,
-    pub lock_sprite: Option<Sprite<'s>>,
-}
+mod ui;
 
-impl LevelArrayButton<'_> {
-    pub fn unlocked(&self) -> bool {
-        self.lock_sprite.is_none()
-    }
-}
-
-/// An UI element containing a set of clickable level icons.
-///
-/// Will render as a horizontal list of buttons, each one corresponding to a different level in a category.
-#[derive(Clone)]
-struct LevelArray<'s> {
-    pub category: usize,
-    pub sprites: Vec<LevelArrayButton<'s>>,
-}
-
-impl<'s> LevelArray<'s> {
-    /// Create a new [`LevelArray`] from a target rect to display at and a category index to display the levels from.
-    fn new(ctx: &Context<'s>, rect: FloatRect, category_idx: usize) -> Self {
-        let mut buttons = Vec::new();
-
-        // Setup the level icons to use. We'll clone these for each level in the category
-        // We'll use the lock icon over levels that haven't unlocked yet
-        let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
-        let mut lock_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(116)).unwrap();
-        let category = &ctx.assets.level_categories[category_idx];
-        level_icon.set_position(Vector2f::new(rect.left, rect.top));
-        level_icon.set_scale(Vector2f::new(
-            rect.height / level_icon.global_bounds().height,
-            rect.height / level_icon.global_bounds().height,
-        ));
-        lock_icon.set_position(Vector2f::new(rect.left, rect.top));
-        lock_icon.set_scale(Vector2f::new(
-            rect.height / lock_icon.global_bounds().height,
-            rect.height / lock_icon.global_bounds().height,
-        ));
-
-        let mut completed_previous_level = true;
-        for level in category.maps.iter() {
-            let completed_level = ctx
-                .completed_levels
-                .internal_set()
-                .contains(level.source.as_ref().unwrap());
-            let is_unlocked = completed_level || completed_previous_level;
-            let color = if is_unlocked {
-                Color {
-                    a: 50,
-                    ..category.color
-                }
-            } else {
-                category.color
-            };
-            level_icon.set_color(color);
-            buttons.push(LevelArrayButton {
-                sprite: level_icon.clone(),
-                lock_sprite: (!is_unlocked).then_some(lock_icon.clone()),
-            });
-
-            // Move to where the next icon will go
-            level_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
-            lock_icon.move_(Vector2f::new(level_icon.global_bounds().width, 0.));
-
-            completed_previous_level = completed_level;
-        }
-
-        Self {
-            sprites: buttons,
-            category: category_idx,
-        }
-    }
-}
+use ui::*;
 
 /// The level select screen. Uses the `main_menu` level in the asset manager to set up its layout.
 #[derive(Clone)]
