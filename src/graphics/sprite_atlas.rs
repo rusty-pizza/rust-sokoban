@@ -38,7 +38,7 @@ impl<'t> SpriteAtlas<'t> {
         Self {
             current_frame: 0,
             frames: Vec::from(frames),
-            sprite: if let Some(first_frame) = frames.get(0) {
+            sprite: if let Some(first_frame) = frames.first() {
                 Sprite::with_texture_and_rect(texture, *first_frame)
             } else {
                 Sprite::with_texture(texture)

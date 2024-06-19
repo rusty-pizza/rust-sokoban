@@ -65,7 +65,7 @@ impl AssetManager {
                         .maps
                         .iter()
                         .map(|path| {
-                            let path = Path::new("assets/levels/").join(&Path::new(path));
+                            let path = Path::new("assets/levels/").join(Path::new(path));
                             Ok((Loader::new().load_tmx_map(&path)?, path))
                         })
                         .collect::<Result<Vec<_>, tiled::Error>>()?,

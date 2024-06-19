@@ -16,7 +16,7 @@ use sfml::{
     system::{Vector2f, Vector2i, Vector2u},
     window::{Event, Key},
 };
-use tiled::{Layer, LayerData, LayerTile, LayerTileData, Map};
+use tiled::{LayerTileData, Map};
 
 use crate::{
     context::Context,
@@ -116,7 +116,7 @@ impl<'s> Level<'s> {
         let size = Vector2u::new(map.width, map.height);
 
         let (building_layer, floor_layer) =
-            Self::get_building_and_floor_layers(&map).ok_or(LevelLoadError::InvalidLayers)?;
+            Self::get_building_and_floor_layers(map).ok_or(LevelLoadError::InvalidLayers)?;
 
         let tilemap = Tilemap::from_tiled_layer(size, &building_layer, assets.tilesheet.tileset());
 
@@ -178,7 +178,7 @@ impl<'s> Level<'s> {
                 o.as_object_layer()
                     .unwrap()
                     .objects()
-                    .map(|object| get_ui_obj_from_tiled_obj(ctx, map, &object).unwrap())
+                    .map(|object| get_ui_obj_from_tiled_obj(ctx, &object).unwrap())
                     .collect()
             });
 
@@ -466,7 +466,7 @@ pub fn camera_transform(
         (map_px_size.x - viewport_size.x) / 2f32 + (viewport_size.x - window_size.x) / 2f32,
         (map_px_size.y - viewport_size.y) / 2f32 + (viewport_size.y - window_size.y) / 2f32,
     );
-    let tile = map_px_size.y / map_size.y as f32;
+    let tile = map_px_size.y / map_size.y;
     x.translate(0., -tile * vertical_padding / 2.);
     x.inverse()
 }

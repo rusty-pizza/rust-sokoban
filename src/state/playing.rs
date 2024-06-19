@@ -71,12 +71,9 @@ impl<'s> Playing<'s> {
             .unwrap();
         for object in object_group.objects() {
             if object.name == "back_button" {
-                let sprite =
-                    sprite_from_tiled_obj(ctx.assets, &ctx.assets.play_overlay_map, &object)?;
+                let sprite = sprite_from_tiled_obj(ctx.assets, &object)?;
                 back_button = Some(sprite);
-            } else if let Ok(obj) =
-                get_ui_obj_from_tiled_obj(ctx, &ctx.assets.play_overlay_map, &object)
-            {
+            } else if let Ok(obj) = get_ui_obj_from_tiled_obj(ctx, &object) {
                 overlay.push(obj);
             } else {
                 log::warn!("could not parse object in play overlay: {:?}", object);

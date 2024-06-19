@@ -142,11 +142,11 @@ impl<'s> Crate<'s> {
     pub fn set_in_hole(&mut self, in_hole: bool) {
         self.in_hole = in_hole;
         self.sprite_atlas
-            .set_frame(
-                in_hole
-                    .then(|| Self::DROPPED_FRAME)
-                    .unwrap_or(Self::NORMAL_FRAME),
-            )
+            .set_frame(if in_hole {
+                Self::DROPPED_FRAME
+            } else {
+                Self::NORMAL_FRAME
+            })
             .unwrap();
     }
 

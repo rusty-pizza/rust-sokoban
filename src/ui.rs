@@ -31,7 +31,6 @@ impl<'a> Clone for Box<dyn UiObject<'a> + 'a> {
 
 pub fn get_ui_obj_from_tiled_obj<'s>(
     context: &Context<'s>,
-    map: &tiled::Map,
     object: &tiled::Object,
 ) -> anyhow::Result<Box<dyn UiObject<'s> + 's>> {
     let assets = context.assets;
@@ -89,11 +88,7 @@ pub fn get_ui_obj_from_tiled_obj<'s>(
         Ok(Box::new(text))
     } else if object.tile_data().is_some() {
         // Static icon
-        Ok(Box::new(sprite_from_tiled_obj(
-            context.assets,
-            map,
-            object,
-        )?))
+        Ok(Box::new(sprite_from_tiled_obj(context.assets, object)?))
     } else {
         Err(anyhow::anyhow!(
             "could not obtain ui object from tiled object {:?}",
@@ -112,7 +107,6 @@ pub enum SpriteFromTiledObjError {
 
 pub fn sprite_from_tiled_obj<'s>(
     assets: &'s AssetManager,
-    map: &tiled::Map,
     object: &tiled::Object,
 ) -> Result<Sprite<'s>, SpriteFromTiledObjError> {
     let tile = object

@@ -27,7 +27,7 @@ impl SaveData {
 
         self.set.insert(level_completed);
         let path_to_save_to = Self::save_file_path();
-        std::fs::create_dir_all(&path_to_save_to.parent().unwrap())
+        std::fs::create_dir_all(path_to_save_to.parent().unwrap())
             .expect("could not create dirs up to project data dir");
         let file = match File::create(&path_to_save_to) {
             Ok(file) => file,

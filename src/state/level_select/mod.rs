@@ -55,7 +55,7 @@ impl<'s> LevelSelect<'s> {
                     .expect("Unknown level category in level map")
                     .0;
                 level_arrays.push(LevelArray::new(ctx, rect, category));
-            } else if let Ok(obj) = get_ui_obj_from_tiled_obj(ctx, &assets.main_menu, &object) {
+            } else if let Ok(obj) = get_ui_obj_from_tiled_obj(ctx, &object) {
                 drawables.push(obj);
             } else {
                 log::warn!("could not parse object in level select: {:?}", object);
@@ -81,13 +81,12 @@ impl<'s> State<'s> for LevelSelect<'s> {
 
             for level_idx in 0..category.maps.len() {
                 let level_button = &mut level_array.sprites[level_idx];
-                if level_button.unlocked() {
-                    if update_button(ctx, window, &mut level_button.sprite) == ButtonState::Pressed
-                    {
-                        // Lifetime shenanigans: Can't return here because we need access to self, which is currently being mutably borrowed
-                        level_to_transition_to = Some((level_idx, level_array.category));
-                        break;
-                    }
+                if level_button.unlocked()
+                    && update_button(ctx, window, &mut level_button.sprite) == ButtonState::Pressed
+                {
+                    // Lifetime shenanigans: Can't return here because we need access to self, which is currently being mutably borrowed
+                    level_to_transition_to = Some((level_idx, level_array.category));
+                    break;
                 }
             }
         }

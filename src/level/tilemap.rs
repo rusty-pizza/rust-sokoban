@@ -1,5 +1,5 @@
 use sfml::system::{Vector2i, Vector2u};
-use tiled::{LayerTile, LayerTileData, Tileset};
+use tiled::{LayerTileData, Tileset};
 
 /// One of a level's tiles. Level tiles are inmutable because they are part of the mesh of it.
 #[derive(Clone, Copy, PartialEq, Eq)]
