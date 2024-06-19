@@ -8,7 +8,7 @@ use sfml::{
     graphics::{Drawable, Transformable},
     system::{Vector2f, Vector2i},
 };
-use tiled::{properties::PropertyValue, tile::Gid};
+use tiled::PropertyValue;
 
 use crate::{graphics::SpriteAtlas, graphics::Tilesheet};
 
@@ -85,26 +85,24 @@ impl<'s> Crate<'s> {
     pub fn new(
         position: Vector2i,
         tilesheet: &'s Tilesheet,
-        gid: Gid,
+        id: u32,
         grid_size: Vector2f,
     ) -> Option<Self> {
-        let tile = tilesheet.tileset().get_tile_by_gid(gid)?;
+        let tile = tilesheet.tileset().get_tile(id)?;
 
-        let crate_type = match tile.properties.0.get("style") {
+        let crate_type = match tile.properties.get("style") {
             Some(x) => CrateStyle::from_tiled_property(x).unwrap(),
             None => None?,
         };
 
-        let get_frame_gid = |frame: usize| -> Option<Gid> {
-            let frames = &tile.animation.as_ref()?.frames;
-            Some(Gid(
-                frames.get(frame)?.tile_id + tilesheet.tileset().first_gid.0
-            ))
+        let get_frame_id = |frame: usize| -> Option<u32> {
+            let frames = &tile.animation.as_ref()?;
+            Some(frames.get(frame)?.tile_id)
         };
 
-        let normal_tex_rect = tilesheet.tile_rect(gid)?;
-        let dropped_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::DROPPED_FRAME)?)?;
-        let positioned_tex_rect = tilesheet.tile_rect(get_frame_gid(Self::POSITIONED_FRAME)?)?;
+        let normal_tex_rect = tilesheet.tile_rect(id)?;
+        let dropped_tex_rect = tilesheet.tile_rect(get_frame_id(Self::DROPPED_FRAME)?)?;
+        let positioned_tex_rect = tilesheet.tile_rect(get_frame_id(Self::POSITIONED_FRAME)?)?;
 
         let sprite_atlas = {
             let mut sprite_atlas = SpriteAtlas::with_texture_and_frames(
@@ -201,32 +199,30 @@ impl<'s> Goal<'s> {
     pub fn new(
         position: Vector2i,
         tilesheet: &'s Tilesheet,
-        gid: Gid,
+        id: u32,
         grid_size: Vector2f,
     ) -> anyhow::Result<Self> {
         let tile = tilesheet
             .tileset()
-            .get_tile_by_gid(gid)
+            .get_tile(id)
             .ok_or_else(|| anyhow::anyhow!("goal tile gid does not exist in tilesheet"))?;
 
-        let get_frame_gid = |frame: usize| -> Option<Gid> {
-            let frames = &tile.animation.as_ref()?.frames;
-            Some(Gid(
-                frames.get(frame)?.tile_id + tilesheet.tileset().first_gid.0
-            ))
+        let get_frame_id = |frame: usize| -> Option<u32> {
+            let frames = &tile.animation.as_ref()?;
+            Some(frames.get(frame)?.tile_id)
         };
 
-        let accepted_style = match tile.properties.0.get("accepts") {
+        let accepted_style = match tile.properties.get("accepts") {
             Some(x) => AcceptedCrateStyle::Specific(CrateStyle::from_tiled_property(x)?),
             None => AcceptedCrateStyle::Any,
         };
 
         let pending_tex_rect = tilesheet
-            .tile_rect(gid)
+            .tile_rect(id)
             .ok_or_else(|| anyhow::anyhow!("could not obtain goal tile rect"))?;
         let done_tex_rect = tilesheet
             .tile_rect(
-                get_frame_gid(Self::DONE_FRAME)
+                get_frame_id(Self::DONE_FRAME)
                     .ok_or_else(|| anyhow::anyhow!("could not obtain goal DONE frame gid"))?,
             )
             .ok_or_else(|| anyhow::anyhow!("could not obtain goal DONE tile rect"))?;

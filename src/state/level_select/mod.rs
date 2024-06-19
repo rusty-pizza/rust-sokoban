@@ -35,18 +35,27 @@ impl<'s> LevelSelect<'s> {
         let mut level_arrays = Vec::new();
         let assets = ctx.assets;
 
-        for object in assets.main_menu.object_groups[0].objects.iter() {
+        let object_group = assets
+            .main_menu
+            .layers()
+            .find_map(|l| l.as_object_layer())
+            .unwrap();
+        for object in object_group.objects() {
             if object.name == "level_array" {
-                let rect = FloatRect::new(object.x, object.y, object.width, object.height);
+                let (width, height) = match object.shape {
+                    tiled::ObjectShape::Rect { width, height } => (width, height),
+                    _ => panic!(),
+                };
+                let rect = FloatRect::new(object.x, object.y, width, height);
                 let category = assets
                     .level_categories
                     .iter()
                     .enumerate()
-                    .find(|(_, cat)| cat.name == object.obj_type)
+                    .find(|(_, cat)| cat.name == object.user_type)
                     .expect("Unknown level category in level map")
                     .0;
                 level_arrays.push(LevelArray::new(ctx, rect, category));
-            } else if let Ok(obj) = get_ui_obj_from_tiled_obj(ctx, &assets.main_menu, object) {
+            } else if let Ok(obj) = get_ui_obj_from_tiled_obj(ctx, &assets.main_menu, &object) {
                 drawables.push(obj);
             } else {
                 log::warn!("could not parse object in level select: {:?}", object);
@@ -125,8 +134,7 @@ impl<'s> State<'s> for LevelSelect<'s> {
             } => {
                 for category in ctx.assets.level_categories.iter() {
                     for level in category.maps.iter() {
-                        ctx.completed_levels
-                            .complete_lvl(level.source.clone().unwrap());
+                        ctx.completed_levels.complete_lvl(level.1.clone());
                     }
                 }
 

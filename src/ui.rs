@@ -4,7 +4,7 @@ use sfml::{
     system::{Vector2f, Vector2u},
 };
 use thiserror::Error;
-use tiled::{objects::ObjectShape, tile::Gid};
+use tiled::ObjectShape;
 
 use crate::{assets::AssetManager, context::Context, level::camera_transform};
 
@@ -31,8 +31,8 @@ impl<'a> Clone for Box<dyn UiObject<'a> + 'a> {
 
 pub fn get_ui_obj_from_tiled_obj<'s>(
     context: &Context<'s>,
-    map: &tiled::map::Map,
-    object: &tiled::objects::Object,
+    map: &tiled::Map,
+    object: &tiled::Object,
 ) -> anyhow::Result<Box<dyn UiObject<'s> + 's>> {
     let assets = context.assets;
 
@@ -41,50 +41,54 @@ pub fn get_ui_obj_from_tiled_obj<'s>(
         halign,
         valign,
         color,
-        contents,
+        text,
+        width,
+        height,
         ..
     } = &object.shape
     {
-        let contents = if object.name == "level_metrics" {
+        // Label object
+        let text = if object.name == "level_metrics" {
             let completed_level_count = context.completed_levels.internal_set().len();
 
             format!("{}/{}", completed_level_count, assets.total_level_count())
         } else {
-            contents.clone()
+            text.clone()
         };
-        let mut text = Text::new(&contents, &assets.win_font, *pixel_size as u32);
+        let mut text = Text::new(&text, &assets.win_font, *pixel_size as u32);
         text.set_fill_color(Color::rgb(color.red, color.green, color.blue));
         let bounds = text.local_bounds();
         text.set_position(Vector2f::new(object.x, object.y));
         text.move_(Vector2f::new(
             match halign {
-                tiled::objects::HorizontalAlignment::Left => -bounds.left,
-                tiled::objects::HorizontalAlignment::Center => {
-                    object.width / 2. - text.local_bounds().width / 2. - bounds.left
+                tiled::HorizontalAlignment::Left => -bounds.left,
+                tiled::HorizontalAlignment::Center => {
+                    width / 2. - text.local_bounds().width / 2. - bounds.left
                 }
-                tiled::objects::HorizontalAlignment::Right => {
-                    object.width - text.local_bounds().width - bounds.left
+                tiled::HorizontalAlignment::Right => {
+                    width - text.local_bounds().width - bounds.left
                 }
-                tiled::objects::HorizontalAlignment::Justify => {
+                tiled::HorizontalAlignment::Justify => {
                     unimplemented!("Justified texts are not implemented")
                 }
             },
             match valign {
-                tiled::objects::VerticalAlignment::Top => -bounds.top,
-                tiled::objects::VerticalAlignment::Center => {
-                    object.height / 2. - text.local_bounds().height / 2. - bounds.top
+                tiled::VerticalAlignment::Top => -bounds.top,
+                tiled::VerticalAlignment::Center => {
+                    height / 2. - text.local_bounds().height / 2. - bounds.top
                 }
-                tiled::objects::VerticalAlignment::Bottom => {
+                tiled::VerticalAlignment::Bottom => {
                     // FIXME: This is wrong! Bottom alignment should not depend on text bounds
                     // and instead should rely on font baseline and other characteristics.
                     // As SFML does not expose them, we are limited to this hack instead.
-                    object.height - bounds.height - bounds.top
+                    height - bounds.height - bounds.top
                 }
             },
         ));
 
         Ok(Box::new(text))
-    } else if object.gid != Gid::EMPTY {
+    } else if object.tile_data().is_some() {
+        // Static icon
         Ok(Box::new(sprite_from_tiled_obj(
             context.assets,
             map,
@@ -100,31 +104,37 @@ pub fn get_ui_obj_from_tiled_obj<'s>(
 
 #[derive(Debug, Error)]
 pub enum SpriteFromTiledObjError {
-    #[error("Tiled object has invalid GID `{0:?}`; Does not map to any tileset")]
-    InvalidGid(Gid),
+    #[error("The object has no tile attached so it has no sprite")]
+    NoTileAttached,
     #[error("Object tileset has invalid tilesheet name `{0}`")]
     InvalidTilesheetName(String),
 }
 
 pub fn sprite_from_tiled_obj<'s>(
     assets: &'s AssetManager,
-    map: &tiled::map::Map,
-    object: &tiled::objects::Object,
+    map: &tiled::Map,
+    object: &tiled::Object,
 ) -> Result<Sprite<'s>, SpriteFromTiledObjError> {
-    let gid_tileset = map
-        .tileset_by_gid(object.gid)
-        .ok_or(SpriteFromTiledObjError::InvalidGid(object.gid))?;
-    let tilesheet = match gid_tileset.name.as_str() {
+    let tile = object
+        .get_tile()
+        .ok_or(SpriteFromTiledObjError::NoTileAttached)?;
+    let tileset = &tile.get_tileset().name;
+    let tilesheet = match tileset.as_str() {
         "icons" => &assets.icon_tilesheet,
         "Sokoban" => &assets.tilesheet,
         x => return Err(SpriteFromTiledObjError::InvalidTilesheetName(x.to_owned())),
     };
     let mut sprite = tilesheet
-        .tile_sprite(Gid(object.gid.0 - gid_tileset.first_gid.0 + 1))
+        .tile_sprite(tile.id())
         .expect("invalid gid found in overlay object");
+
+    let (width, height) = match object.shape {
+        tiled::ObjectShape::Rect { width, height } => (width, height),
+        _ => panic!(),
+    };
     sprite.set_scale(Vector2f::new(
-        object.width / sprite.texture_rect().width as f32,
-        object.height / sprite.texture_rect().height as f32,
+        width / sprite.texture_rect().width as f32,
+        height / sprite.texture_rect().height as f32,
     ));
     sprite.set_position(Vector2f::new(object.x, object.y));
     sprite.set_rotation(object.rotation);

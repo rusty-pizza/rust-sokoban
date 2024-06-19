@@ -2,7 +2,6 @@ use sfml::{
     graphics::{Color, FloatRect, Sprite, Transformable},
     system::Vector2f,
 };
-use tiled::tile::Gid;
 
 use crate::context::Context;
 
@@ -37,8 +36,8 @@ impl<'s> LevelArray<'s> {
 
         // Setup the level icons to use. We'll clone these for each level in the category
         // We'll use the lock icon over levels that haven't unlocked yet
-        let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(92)).unwrap();
-        let mut lock_icon = ctx.assets.icon_tilesheet.tile_sprite(Gid(116)).unwrap();
+        let mut level_icon = ctx.assets.icon_tilesheet.tile_sprite(91).unwrap();
+        let mut lock_icon = ctx.assets.icon_tilesheet.tile_sprite(115).unwrap();
         let category = &ctx.assets.level_categories[category_idx];
         level_icon.set_position(Vector2f::new(rect.left, rect.top));
         level_icon.set_scale(Vector2f::new(
@@ -53,10 +52,7 @@ impl<'s> LevelArray<'s> {
 
         let mut completed_previous_level = true;
         for level in category.maps.iter() {
-            let completed_level = ctx
-                .completed_levels
-                .internal_set()
-                .contains(level.source.as_ref().unwrap());
+            let completed_level = ctx.completed_levels.internal_set().contains(&level.1);
             let is_unlocked = completed_level || completed_previous_level;
             let color = if is_unlocked {
                 Color {

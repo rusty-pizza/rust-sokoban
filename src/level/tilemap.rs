@@ -1,5 +1,5 @@
 use sfml::system::{Vector2i, Vector2u};
-use tiled::{layers::LayerTile, tile::Gid, tileset::Tileset};
+use tiled::{LayerTile, LayerTileData, Tileset};
 
 /// One of a level's tiles. Level tiles are inmutable because they are part of the mesh of it.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -20,23 +20,22 @@ impl Tilemap {
     /// Extracts a Tilemap from a given Tiled layer, its related tileset and size.
     pub fn from_tiled_layer(
         size: Vector2u,
-        building_layer: &[LayerTile],
+        building_layer: &[Option<LayerTileData>],
         tileset: &Tileset,
     ) -> Self {
         let tiles = building_layer
             .iter()
-            .map(|tile| {
-                if tile.gid == Gid::EMPTY {
-                    return LevelTile::Floor;
-                }
+            .map(|tile| match tile {
+                Some(tile) => {
+                    let tile_data = tileset.get_tile(tile.id());
 
-                let tile_data = tileset.get_tile_by_gid(tile.gid);
-
-                match tile_data.and_then(|t| t.tile_type.as_deref()) {
-                    Some("solid") => LevelTile::Solid,
-                    Some("hole") => LevelTile::Hole,
-                    _ => LevelTile::Floor,
+                    match tile_data.as_ref().and_then(|t| t.user_type.as_deref()) {
+                        Some("solid") => LevelTile::Solid,
+                        Some("hole") => LevelTile::Hole,
+                        _ => LevelTile::Floor,
+                    }
                 }
+                None => LevelTile::Floor,
             })
             .collect::<Vec<_>>();
 

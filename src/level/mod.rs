@@ -16,11 +16,7 @@ use sfml::{
     system::{Vector2f, Vector2i, Vector2u},
     window::{Event, Key},
 };
-use tiled::{
-    layers::{Layer, LayerData, LayerTile},
-    map::Map,
-    tile::Gid,
-};
+use tiled::{Layer, LayerData, LayerTile, LayerTileData, Map};
 
 use crate::{
     context::Context,
@@ -111,7 +107,7 @@ pub struct Level<'s> {
 impl<'s> Level<'s> {
     /// Load a sokoban level from a Tiled map and its tilesheet.
     pub fn from_map(map: &Map, ctx: &Context<'s>) -> Result<Level<'s>, LevelLoadError> {
-        if map.infinite {
+        if map.infinite() {
             return Err(LevelLoadError::NotFinite);
         }
 
@@ -119,26 +115,31 @@ impl<'s> Level<'s> {
 
         let size = Vector2u::new(map.width, map.height);
 
-        let (building_layer, floor_layer) = Self::get_building_and_floor_layers(&map.layers)
-            .ok_or(LevelLoadError::InvalidLayers)?;
+        let (building_layer, floor_layer) =
+            Self::get_building_and_floor_layers(&map).ok_or(LevelLoadError::InvalidLayers)?;
 
         let tilemap = Tilemap::from_tiled_layer(size, &building_layer, assets.tilesheet.tileset());
+
+        let object_group = map
+            .layers()
+            .filter_map(|layer| layer.as_object_layer())
+            .next()
+            .unwrap();
 
         let (crates, goals, player_spawn) = {
             let mut crates = Vec::new();
             let mut goals = Vec::new();
             let mut player_spawn = None;
 
-            let objects = &map.object_groups[0].objects;
-            for object in objects {
+            for object in object_group.objects() {
                 use objects::parsing::MapObject::{self, *};
 
-                match MapObject::from_tiled_object(object, map, &assets.tilesheet) {
+                match MapObject::from_tiled_object(&object, map, &assets.tilesheet) {
                     Some(Spawn { position }) => player_spawn = Some(position),
                     Some(Crate(c)) => crates.push(c),
                     Some(Goal(g)) => goals.push(g),
 
-                    None => return Err(LevelLoadError::InvalidObject(object.clone())),
+                    None => return Err(LevelLoadError::InvalidObject((*object).clone())),
                 }
             }
 
@@ -171,13 +172,13 @@ impl<'s> Level<'s> {
         );
 
         let overlay = map
-            .object_groups
-            .iter()
+            .layers()
             .find(|o| o.name == "overlay")
             .map_or(vec![], |o| {
-                o.objects
-                    .iter()
-                    .map(|object| get_ui_obj_from_tiled_obj(ctx, map, object).unwrap())
+                o.as_object_layer()
+                    .unwrap()
+                    .objects()
+                    .map(|object| get_ui_obj_from_tiled_obj(ctx, map, &object).unwrap())
                     .collect()
             });
 
@@ -196,24 +197,35 @@ impl<'s> Level<'s> {
     }
 
     /// Extracts the building and floor layers from the given Tiled ones.
-    fn get_building_and_floor_layers(layers: &[Layer]) -> Option<(Vec<LayerTile>, Vec<LayerTile>)> {
-        let building = layers.iter().find(|l| l.name == "building")?;
-        let floor = layers.iter().find(|l| l.name == "floor")?;
+    fn get_building_and_floor_layers(
+        map: &Map,
+    ) -> Option<(Vec<Option<LayerTileData>>, Vec<Option<LayerTileData>>)> {
+        let building = map
+            .layers()
+            .find(|l| l.name == "building")?
+            .as_tile_layer()?;
+        let floor = map.layers().find(|l| l.name == "floor")?.as_tile_layer()?;
 
-        match (&building.tiles, &floor.tiles) {
-            (LayerData::Finite(building), LayerData::Finite(floor)) => Some((
-                building.iter().flatten().copied().collect(),
-                floor.iter().flatten().copied().collect(),
-            )),
-            _ => None,
+        let mut building_tiles = Vec::new();
+        let mut floor_tiles = Vec::new();
+
+        for y in 0..building.height()? as i32 {
+            for x in 0..building.width()? as i32 {
+                let building_tile = building.get_tile(x, y).as_deref().cloned();
+                let floor_tile = floor.get_tile(x, y).as_deref().cloned();
+                building_tiles.push(building_tile);
+                floor_tiles.push(floor_tile);
+            }
         }
+
+        Some((building_tiles, floor_tiles))
     }
 
     /// Generates a static level mesh and returns it.
     fn generate_vertices(
         size_in_tiles: &Vector2u,
-        building_layer: &[LayerTile],
-        floor_layer: &[LayerTile],
+        building_layer: &[Option<LayerTileData>],
+        floor_layer: &[Option<LayerTileData>],
         tilesheet: &Tilesheet,
         grid_size: Vector2f,
     ) -> Vec<Vertex> {
@@ -228,22 +240,22 @@ impl<'s> Level<'s> {
                 (i % size_in_tiles.x as usize) as f32,
                 (i / size_in_tiles.x as usize) as f32,
             );
-            if f_tile.gid != Gid::EMPTY {
+            if let Some(f_tile) = f_tile {
                 vertices.add_quad(
                     (position + FLOOR_OFFSET - Vector2f::new(TILE_DILATION, TILE_DILATION))
                         .cwise_mul(grid_size),
                     grid_size * (1f32 + TILE_DILATION * 2.),
                     tilesheet
-                        .tile_uv(f_tile.gid)
+                        .tile_uv(f_tile.id())
                         .expect("obtaining floor tile UV"),
                 );
             }
-            if b_tile.gid != Gid::EMPTY {
+            if let Some(b_tile) = b_tile {
                 vertices.add_quad(
                     (position - Vector2f::new(TILE_DILATION, TILE_DILATION)).cwise_mul(grid_size),
                     grid_size * (1f32 + TILE_DILATION * 2.),
                     tilesheet
-                        .tile_uv(b_tile.gid)
+                        .tile_uv(b_tile.id())
                         .expect("obtaining building tile UV"),
                 );
             }

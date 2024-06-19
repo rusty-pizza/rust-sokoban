@@ -63,13 +63,19 @@ impl<'s> Playing<'s> {
     ) -> anyhow::Result<Self> {
         let mut overlay = Vec::new();
         let mut back_button = None;
-        for object in ctx.assets.play_overlay_map.object_groups[0].objects.iter() {
+        let object_group = ctx
+            .assets
+            .play_overlay_map
+            .layers()
+            .find_map(|l| l.as_object_layer())
+            .unwrap();
+        for object in object_group.objects() {
             if object.name == "back_button" {
                 let sprite =
-                    sprite_from_tiled_obj(ctx.assets, &ctx.assets.play_overlay_map, object)?;
+                    sprite_from_tiled_obj(ctx.assets, &ctx.assets.play_overlay_map, &object)?;
                 back_button = Some(sprite);
             } else if let Ok(obj) =
-                get_ui_obj_from_tiled_obj(ctx, &ctx.assets.play_overlay_map, object)
+                get_ui_obj_from_tiled_obj(ctx, &ctx.assets.play_overlay_map, &object)
             {
                 overlay.push(obj);
             } else {
@@ -81,7 +87,7 @@ impl<'s> Playing<'s> {
             level_index,
             category_index,
             level: Level::from_map(
-                &ctx.assets.level_categories[category_index].maps[level_index],
+                &ctx.assets.level_categories[category_index].maps[level_index].0,
                 ctx,
             )?,
             overlay: PlayOverlay {
@@ -125,9 +131,8 @@ impl<'s> State<'s> for Playing<'s> {
                 // Mark this level as complete
                 ctx.completed_levels.complete_lvl(
                     ctx.assets.level_categories[self.category_index].maps[self.level_index]
-                        .source
-                        .clone()
-                        .unwrap(),
+                        .1
+                        .clone(),
                 );
 
                 let next_level_index = self.level_index + 1;
@@ -166,7 +171,7 @@ impl<'s> State<'s> for Playing<'s> {
             }
             Event::KeyPressed { code: Key::R, .. } => {
                 self.level = Level::from_map(
-                    &ctx.assets.level_categories[self.category_index].maps[self.level_index],
+                    &ctx.assets.level_categories[self.category_index].maps[self.level_index].0,
                     ctx,
                 )
                 .unwrap()

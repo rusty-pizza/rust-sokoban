@@ -2,7 +2,7 @@ use sfml::{
     graphics::{Drawable, Rect, Transformable},
     system::{Vector2f, Vector2i},
 };
-use tiled::{properties::PropertyValue, tile::Gid};
+use tiled::PropertyValue;
 
 use crate::graphics::{SpriteAtlas, Tilesheet};
 
@@ -22,11 +22,9 @@ impl Player<'_> {
         let texture = tilesheet.texture();
 
         let get_rect = |property_name: &str| -> Option<Rect<i32>> {
-            let prop = tilesheet.tileset().properties.0.get(property_name)?;
+            let prop = tilesheet.tileset().properties.get(property_name)?;
             match prop {
-                PropertyValue::IntValue(x) => {
-                    tilesheet.tile_rect(Gid(*x as u32 + tilesheet.tileset().first_gid.0))
-                }
+                PropertyValue::IntValue(x) => tilesheet.tile_rect(*x as u32),
                 _ => None,
             }
         };

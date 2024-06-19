@@ -2,7 +2,10 @@
 
 #![allow(dead_code)]
 
-use std::{fs::File, path::Path};
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+};
 
 use serde::Deserialize;
 use sfml::{
@@ -10,7 +13,7 @@ use sfml::{
     graphics::{Color, Font},
     SfBox,
 };
-use tiled::{map::Map, tile::Gid};
+use tiled::{Loader, Map};
 
 use crate::graphics::Tilesheet;
 
@@ -25,7 +28,7 @@ pub const PLAY_OVERLAY_PATH: &str = "assets/levels/overlay.tmx";
 pub struct LevelCategory {
     pub name: String,
     pub color: Color,
-    pub maps: Vec<Map>,
+    pub maps: Vec<(Map, PathBuf)>,
 }
 
 pub struct AssetManager {
@@ -62,9 +65,10 @@ impl AssetManager {
                         .maps
                         .iter()
                         .map(|path| {
-                            Map::parse_file(&Path::new("assets/levels/").join(&Path::new(path)))
+                            let path = Path::new("assets/levels/").join(&Path::new(path));
+                            Ok((Loader::new().load_tmx_map(&path)?, path))
                         })
-                        .collect::<Result<Vec<_>, _>>()?,
+                        .collect::<Result<Vec<_>, tiled::Error>>()?,
                 })
             }
         }
@@ -77,13 +81,13 @@ impl AssetManager {
             .map(|lvl| lvl.try_into())
             .collect::<Result<Vec<LevelCategory>, _>>()?;
 
-        let play_overlay_map = Map::parse_file(Path::new(PLAY_OVERLAY_PATH))?;
+        let play_overlay_map = Loader::new().load_tmx_map(Path::new(PLAY_OVERLAY_PATH))?;
 
-        let map = Map::parse_file(Path::new("assets/levels/test.tmx"))?;
+        let map = Loader::new().load_tmx_map(Path::new("assets/levels/test.tmx"))?;
         Ok(Self {
-            tilesheet: Tilesheet::from_tileset(map.tilesets[0].clone())?,
-            main_menu: Map::parse_file(Path::new(MAIN_MENU_PATH))?,
-            icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH), Gid(1))?,
+            tilesheet: Tilesheet::from_tileset(map.tilesets().first().unwrap().clone())?,
+            main_menu: Loader::new().load_tmx_map(Path::new(MAIN_MENU_PATH))?,
+            icon_tilesheet: Tilesheet::from_file(Path::new(ICON_TILESHEET_PATH))?,
             total_level_count: level_categories.iter().flat_map(|c| c.maps.iter()).count(),
             level_categories,
             play_overlay_map,

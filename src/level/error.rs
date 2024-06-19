@@ -1,5 +1,4 @@
 use thiserror::Error;
-use tiled::error::TiledError;
 
 use crate::graphics::TilesheetLoadError;
 
@@ -26,11 +25,11 @@ pub enum LevelLoadError {
     #[error("Invalid object groups: There should be a single and only object group in the map.")]
     InvalidObjectGroups,
     #[error("Invalid object: {0:?}")]
-    InvalidObject(tiled::objects::Object),
+    InvalidObject(tiled::ObjectData),
     #[error("Tiled error: {0}")]
     TiledError(
         #[from]
         #[source]
-        TiledError,
+        tiled::Error,
     ),
 }
