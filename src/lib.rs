@@ -25,7 +25,11 @@ pub mod ui;
 pub fn run() -> anyhow::Result<()> {
     env_logger::init();
 
-    let assets = AssetManager::load().context("failed to load assets")?;
+    let (ggctx, event_loop) = ggez::ContextBuilder::new("Sokoban", "aleok")
+        .build()
+        .unwrap();
+
+    let assets = AssetManager::load(&ggctx).context("failed to load assets")?;
     let mut window = create_window();
     let sound = SoundManager::new();
     let completed_levels = match SaveData::from_savefile() {
@@ -47,7 +51,10 @@ pub fn run() -> anyhow::Result<()> {
     let mut state: Box<dyn State> = Box::new(LevelSelect::new(&context)?);
 
     let mut last_frame_time = std::time::Instant::now();
-    'outer: loop {
+
+    event_loop.run(move |event, window, ctrl_flow| {
+        ggez::event::process_event(&mut ggctx, &mut event);
+
         let this_frame_time = std::time::Instant::now();
         context.delta_time = this_frame_time - last_frame_time;
 
@@ -60,7 +67,7 @@ pub fn run() -> anyhow::Result<()> {
 
         while let Some(event) = window.poll_event() {
             if event == Event::Closed {
-                break 'outer;
+                ctrl_flow.set_exit();
             }
 
             if let ControlFlow::Break(new_state) =
@@ -75,7 +82,7 @@ pub fn run() -> anyhow::Result<()> {
         window.display();
 
         last_frame_time = this_frame_time;
-    }
+    });
 
     Ok(())
 }

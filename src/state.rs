@@ -1,9 +1,7 @@
 use std::ops::ControlFlow;
 
-use sfml::{
-    graphics::{RenderTarget, RenderWindow},
-    window::Event,
-};
+use ggez::graphics::Canvas;
+use sfml::{graphics::RenderWindow, window::Event};
 
 use crate::context::Context;
 
@@ -15,7 +13,7 @@ pub trait State<'s> {
         window: &mut RenderWindow,
     ) -> ControlFlow<Box<dyn State<'s> + 's>, ()>;
 
-    fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget);
+    fn draw(&self, ctx: &mut Context<'s>, target: &mut Canvas);
 
     fn process_event(
         &mut self,

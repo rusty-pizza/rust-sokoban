@@ -4,18 +4,18 @@
 
 use std::{
     fs::File,
+    io::BufReader,
     path::{Path, PathBuf},
 };
 
-use serde::Deserialize;
-use sfml::{
-    audio::SoundBuffer,
-    graphics::{Color, Font},
-    SfBox,
+use ggez::{
+    audio::SoundData,
+    graphics::{Color, FontData},
 };
+use serde::Deserialize;
 use tiled::{Loader, Map};
 
-use crate::graphics::Tilesheet;
+use crate::{context::Context, graphics::Tilesheet};
 
 pub const MOVE_SOUND_DIR: &str = "assets/sound/move";
 pub const UNDO_SOUND_DIR: &str = "assets/sound/undo";
@@ -35,18 +35,18 @@ pub struct AssetManager {
     pub main_menu: Map,
     pub level_categories: Vec<LevelCategory>,
     pub icon_tilesheet: Tilesheet,
-    pub walk_sounds: Vec<SfBox<SoundBuffer>>,
-    pub undo_sounds: Vec<SfBox<SoundBuffer>>,
-    pub ui_click_sound: SfBox<SoundBuffer>,
+    pub walk_sounds: Vec<SoundData>,
+    pub undo_sounds: Vec<SoundData>,
+    pub ui_click_sound: SoundData,
     pub tilesheet: Tilesheet,
-    pub win_font: SfBox<Font>,
+    pub win_font: FontData,
     pub play_overlay_map: Map,
     total_level_count: usize,
 }
 
 impl AssetManager {
     /// Creates a new asset manager and loads the data it references.
-    pub fn load() -> anyhow::Result<Self> {
+    pub fn load(ctx: &ggez::Context) -> anyhow::Result<Self> {
         #[derive(Deserialize)]
         pub struct RonLevelCategory {
             pub name: String,
@@ -60,7 +60,7 @@ impl AssetManager {
             fn try_from(value: RonLevelCategory) -> Result<Self, Self::Error> {
                 Ok(LevelCategory {
                     name: value.name,
-                    color: Color::from(value.color),
+                    color: Color::from_rgba_u32(value.color),
                     maps: value
                         .maps
                         .iter()
@@ -91,8 +91,11 @@ impl AssetManager {
             total_level_count: level_categories.iter().flat_map(|c| c.maps.iter()).count(),
             level_categories,
             play_overlay_map,
-            ui_click_sound: SoundBuffer::from_file(UI_CLICK_SOUND_PATH)
-                .expect("could not load ui click sfx"),
+            // TODO: from_path for ggez::SoundData
+            ui_click_sound: SoundData::from_read(&mut BufReader::new(File::open(
+                UI_CLICK_SOUND_PATH,
+            )?))
+            .expect("could not load ui click sfx"),
             walk_sounds: std::fs::read_dir(Path::new(MOVE_SOUND_DIR))
                 .expect("could not inspect the sounds directory")
                 .map(|entry| {
@@ -101,8 +104,10 @@ impl AssetManager {
                         .path()
                 })
                 .map(|path| {
-                    SoundBuffer::from_file(path.to_str().unwrap())
-                        .expect("could not read sound file")
+                    SoundData::from_read(&mut BufReader::new(
+                        File::open(path.to_str().unwrap()).unwrap(),
+                    ))
+                    .expect("could not read sound file")
                 })
                 .collect(),
             undo_sounds: std::fs::read_dir(Path::new(UNDO_SOUND_DIR))
@@ -113,11 +118,13 @@ impl AssetManager {
                         .path()
                 })
                 .map(|path| {
-                    SoundBuffer::from_file(path.to_str().unwrap())
-                        .expect("could not read sound file")
+                    SoundData::from_read(&mut BufReader::new(
+                        File::open(path.to_str().unwrap()).unwrap(),
+                    ))
+                    .expect("could not read sound file")
                 })
                 .collect(),
-            win_font: Font::from_file(WIN_FONT_PATH).expect("could not load win font"),
+            win_font: FontData::from_path(&ctx.fs, WIN_FONT_PATH).expect("could not load win font"),
         })
     }
 

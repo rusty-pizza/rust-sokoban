@@ -1,3 +1,4 @@
+use ggez::graphics::Canvas;
 use sfml::graphics::Rect;
 
 use sfml;
@@ -188,7 +189,7 @@ impl<'s> State<'s> for Playing<'s> {
         ControlFlow::Continue(())
     }
 
-    fn draw(&self, ctx: &mut Context<'s>, target: &mut dyn RenderTarget) {
+    fn draw(&self, ctx: &mut Context<'s>, target: &mut Canvas) {
         let is_level_won = self.level.is_won();
 
         let transform = camera_transform(
@@ -202,9 +203,7 @@ impl<'s> State<'s> for Playing<'s> {
         );
         let render_states = RenderStates::new(BlendMode::ALPHA, transform, None, None);
 
-        target.clear(self.level.background_color);
-
-        target.draw_with_renderstates(&self.level, &render_states);
+        self.level.draw(ctx, target);
 
         if is_level_won {
             let is_last_level_of_category =
